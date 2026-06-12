@@ -1,0 +1,8 @@
+:host {
+  display: block;
+}
+
+.top-bar form {
+  display: flex;
+  align-items: center;
+}
