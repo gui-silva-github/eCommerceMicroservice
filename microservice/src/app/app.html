@@ -1,0 +1,97 @@
+<div class="top-container flex">
+  <nav class="side-bar flex flex-column" aria-label="Menu principal">
+    <div class="flex app-title-container title-color">
+      <mat-icon class="title-color" aria-hidden="true">storefront</mat-icon>
+      <span class="e-commerce-title">e-Commerce</span>
+    </div>
+
+    <a mat-button [routerLink]="['/products', 'showcase']" class="side-bar-button" routerLinkActive="active-link">
+      <mat-icon aria-hidden="true">home</mat-icon>
+      <span>Home</span>
+    </a>
+
+    @if (usersService.isAuthenticated && usersService.isAdmin == false) {
+      <a mat-button [routerLink]="['/cart']" class="side-bar-button" routerLinkActive="active-link">
+        <mat-icon aria-hidden="true">shopping_cart</mat-icon>
+        <span>Carrinho</span>
+      </a>
+    }
+
+    @if (usersService.isAuthenticated && usersService.isAdmin == false) {
+      <a mat-button [routerLink]="['/orders']" class="side-bar-button" routerLinkActive="active-link">
+        <mat-icon aria-hidden="true">receipt_long</mat-icon>
+        <span>Pedidos</span>
+      </a>
+    }
+
+    @if (usersService.isAuthenticated && usersService.isAdmin) {
+      <a mat-button [routerLink]="['/admin', 'products']" class="side-bar-button" routerLinkActive="active-link">
+        <mat-icon aria-hidden="true">inventory_2</mat-icon>
+        <span>Produtos</span>
+      </a>
+    }
+
+    <span class="spacer"></span>
+
+    <div class="copy-right">
+      &copy; Todos os direitos reservados
+    </div>
+  </nav>
+
+  <div class="app-container">
+    <mat-toolbar class="top-bar">
+      <span class="spacer"></span>
+
+      <form id="search-form" [formGroup]="searchForm" (ngSubmit)="search()" role="search">
+        <div class="search-wrapper">
+          <div class="search-box">
+            <mat-icon class="search-icon" aria-hidden="true">search</mat-icon>
+            <input
+              id="searchText"
+              type="search"
+              name="searchText"
+              placeholder="Buscar produtos..."
+              formControlName="searchStr"
+              aria-label="Buscar produtos"
+            />
+            <button id="searchButton" type="submit" name="searchButton" aria-label="Pesquisar">
+              <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      @if (!usersService.isAuthenticated) {
+        <a mat-button [routerLink]="['/auth', 'login']" class="top-bar-button" routerLinkActive="active-link">
+          <mat-icon aria-hidden="true">login</mat-icon>
+          <span>Login</span>
+        </a>
+      }
+
+      @if (!usersService.isAuthenticated) {
+        <a mat-button [routerLink]="['/auth', 'register']" class="top-bar-button" routerLinkActive="active-link">
+          <mat-icon aria-hidden="true">person_add</mat-icon>
+          <span>Cadastro</span>
+        </a>
+      }
+
+      @if (usersService.isAuthenticated) {
+        <button mat-button class="user-chip" type="button" aria-label="Usuário logado">
+          <mat-icon aria-hidden="true">account_circle</mat-icon>
+          <span>{{ usersService.currentUserName }}</span>
+        </button>
+      }
+
+      @if (usersService.isAuthenticated) {
+        <a mat-button (click)="logout()" class="top-bar-button">
+          <mat-icon aria-hidden="true">logout</mat-icon>
+          <span>Sair</span>
+        </a>
+      }
+    </mat-toolbar>
+
+    <main class="page-container">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
