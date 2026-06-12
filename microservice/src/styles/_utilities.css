@@ -1,0 +1,18 @@
+.flex { display: flex; }
+.flex-column { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-justify-content { justify-content: space-between; }
+.flex-item { flex: 1; }
+.spacer { flex: 1 1 auto; }
+.hidden { display: none; }
+.w-100 { width: 100%; }
+.w-50 { width: min(520px, 92vw); margin: auto; }
+.mt { margin-top: 0.5rem; }
+.mb { margin-bottom: 0.5rem; }
+.ml { margin-left: 0.5rem; }
+.mr { margin-right: 0.5rem; }
+.bold { font-weight: 600; }
+.text-grey { color: var(--text-secondary); }
+.text-white { color: #ffffff !important; }
+.title-color { color: #fff; }

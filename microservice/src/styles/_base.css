@@ -1,0 +1,32 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+  background: linear-gradient(135deg, var(--primary-50) 0%, var(--accent-100) 48%, #f5f3ff 100%);
+  color: var(--text-primary);
+  overflow-y: scroll;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  text-decoration: none;
+}
+
+button,
+a[mat-button],
+a[mat-flat-button],
+a[mat-raised-button] {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--primary-400);
+  outline-offset: 2px;
+}

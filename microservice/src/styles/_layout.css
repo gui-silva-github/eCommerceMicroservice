@@ -1,0 +1,128 @@
+.top-container {
+  min-height: 100vh;
+}
+
+.side-bar {
+  background: var(--sidebar-bg);
+  flex: 0 0 272px;
+  padding: 1.25rem 0.85rem;
+  color: var(--text-on-dark);
+  box-shadow: var(--shadow-lg);
+}
+
+.app-title-container {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem 1.75rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+.e-commerce-title {
+  margin-left: 0.15rem;
+}
+
+.side-bar-button {
+  justify-content: flex-start !important;
+  width: 100%;
+  padding: 0 1rem !important;
+  margin-bottom: 0.35rem;
+  color: #e0e7ff !important;
+  border-radius: var(--radius-sm) !important;
+  min-height: 44px;
+}
+
+.side-bar-button:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+}
+
+.side-bar-button .mat-icon {
+  margin-right: 0.65rem;
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.active-link {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+  box-shadow: inset 3px 0 0 #c4b5fd;
+}
+
+.copy-right {
+  font-size: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(224, 231, 255, 0.8);
+}
+
+.app-container {
+  flex: 1;
+  min-width: 0;
+}
+
+.top-bar {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  padding: 0.35rem 1.5rem !important;
+  z-index: 1000;
+  gap: 0.5rem;
+}
+
+.top-bar-button {
+  margin-left: 0.35rem;
+  border-radius: var(--radius-sm) !important;
+}
+
+.user-chip {
+  border-radius: 999px !important;
+  background: var(--primary-50) !important;
+  color: var(--primary-700) !important;
+  padding: 0 0.85rem !important;
+}
+
+.page-container {
+  padding: 1.75rem 2rem 2.5rem;
+  max-width: 1400px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 700 !important;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+  color: var(--primary-800);
+  letter-spacing: -0.02em;
+}
+
+.page-header__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary-600), var(--accent-500));
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.page-header__subtitle {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-top: 0.15rem;
+}
+
+.page-header__text {
+  display: flex;
+  flex-direction: column;
+}
