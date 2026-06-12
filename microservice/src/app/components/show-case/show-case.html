@@ -1,0 +1,76 @@
+<div class="page-header">
+  <span class="page-header__icon" aria-hidden="true">
+    <mat-icon>storefront</mat-icon>
+  </span>
+  <div class="page-header__text">
+    <span>Catálogo de Produtos</span>
+    <span class="page-header__subtitle">Explore as melhores ofertas da loja</span>
+  </div>
+</div>
+
+@if (productsService.loading()) {
+  <div class="empty-state" role="status">
+    <span class="empty-state__icon" aria-hidden="true">
+      <mat-icon>hourglass_top</mat-icon>
+    </span>
+    <p class="empty-state__title">Carregando catálogo...</p>
+  </div>
+} @else if (productsService.error(); as errorMessage) {
+  <div class="empty-state" role="alert">
+    <span class="empty-state__icon" aria-hidden="true">
+      <mat-icon>cloud_off</mat-icon>
+    </span>
+    <p class="empty-state__title">Falha ao carregar</p>
+    <p class="empty-state__hint">{{ errorMessage }}</p>
+    <button mat-stroked-button color="primary" type="button" (click)="productsService.loadCatalog()">
+      <mat-icon>refresh</mat-icon>
+      Tentar novamente
+    </button>
+  </div>
+} @else if (!productsService.hasProducts()) {
+  <div class="empty-state" role="status">
+    <span class="empty-state__icon" aria-hidden="true">
+      <mat-icon>shopping_bag</mat-icon>
+    </span>
+    <p class="empty-state__title">Nenhum produto disponível</p>
+    <p class="empty-state__hint">O catálogo será atualizado em breve. Volte mais tarde.</p>
+  </div>
+} @else {
+  <div class="product-grid">
+    @for (product of productsService.catalog(); track product.productID) {
+      <mat-card class="product">
+        <mat-card-header>
+          <mat-card-subtitle>
+            <span class="category-chip">
+              <mat-icon aria-hidden="true">category</mat-icon>
+              {{ product.category }}
+            </span>
+          </mat-card-subtitle>
+          <mat-card-title>{{ product.productName }}</mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content class="mt">
+          <p class="price-tag">
+            <mat-icon aria-hidden="true">sell</mat-icon>
+            {{ product.unitPrice | currency:'BRL':'symbol':'1.2-2' }}
+          </p>
+          <mat-divider></mat-divider>
+        </mat-card-content>
+
+        <mat-card-actions>
+          @if (usersService.isAuthenticated) {
+            <button mat-flat-button color="primary" class="btn-icon-action">
+              <mat-icon aria-hidden="true">add_shopping_cart</mat-icon>
+              Adicionar ao Carrinho
+            </button>
+          } @else {
+            <a mat-button color="primary" [routerLink]="['/auth', 'login']" class="btn-icon-action">
+              <mat-icon aria-hidden="true">login</mat-icon>
+              Login para comprar
+            </a>
+          }
+        </mat-card-actions>
+      </mat-card>
+    }
+  </div>
+}

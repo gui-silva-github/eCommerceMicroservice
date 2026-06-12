@@ -1,0 +1,80 @@
+<div class="container">
+  <mat-card class="w-50">
+    <mat-card-header>
+      <mat-card-title class="card-title">Adicionar Produto</mat-card-title>
+      <span class="spacer"></span>
+      <a [routerLink]="['/admin', 'products']" mat-button class="mat-link">Voltar aos Produtos</a>
+    </mat-card-header>
+    <mat-card-content class="flex flex-column">
+      @if (errorMessage(); as message) {
+        <div class="app-alert app-alert--error" role="alert">
+          <mat-icon aria-hidden="true">error_outline</mat-icon>
+          <div class="app-alert__content">
+            <p class="app-alert__title">Não foi possível salvar</p>
+            <p class="app-alert__message">{{ message }}</p>
+          </div>
+        </div>
+      }
+
+      <form [formGroup]="newProductForm" (ngSubmit)="create()">
+        <mat-form-field class="w-100">
+          <mat-label>Nome do Produto</mat-label>
+          <input matInput placeholder="Nome do Produto" formControlName="productName" autofocus="autofocus" />
+          @if (productNameFormControl.hasError('required')) {
+            <mat-error>Nome do Produto não pode ser vazio</mat-error>
+          } @else if (hasApiError(productNameFormControl)) {
+            <mat-error>{{ getApiError(productNameFormControl) }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="w-100">
+          <mat-label>Categoria</mat-label>
+          <mat-select formControlName="category">
+            <mat-option value="Eletronicos">
+              Eletrônicos
+            </mat-option>
+            <mat-option value="Eletrodomesticos">
+              Eletrodomésticos
+            </mat-option>
+            <mat-option value="Moveis">
+              Móveis
+            </mat-option>
+            <mat-option value="Acessorios">
+              Acessórios
+            </mat-option>
+          </mat-select>
+          @if (categoryFormControl.hasError('required')) {
+            <mat-error>Categoria não pode ser vazia</mat-error>
+          } @else if (hasApiError(categoryFormControl)) {
+            <mat-error>{{ getApiError(categoryFormControl) }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="w-100">
+          <mat-label>Preço Unitário</mat-label>
+          <input matInput type="number" placeholder="Preço Unitário" formControlName="unitPrice" />
+          @if (unitPriceFormControl.hasError('required')) {
+            <mat-error>Preço Unitário não pode ser vazio</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="w-100">
+          <mat-label>Quantidade em Estoque</mat-label>
+          <input matInput type="number" placeholder="Quantidade em Estoque" formControlName="quantityInStock" />
+          @if (quantityInStockFormControl.hasError('required')) {
+            <mat-error>Quantidade em Estoque não pode ser vazia</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="flex button-panel">
+          <div class="empty"></div>
+          @if (usersService.isAuthenticated && usersService.isAdmin) {
+            <button mat-raised-button color="primary" type="submit" [disabled]="isSubmitting()">
+              {{ isSubmitting() ? 'Salvando...' : 'Salvar' }}
+            </button>
+          }
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

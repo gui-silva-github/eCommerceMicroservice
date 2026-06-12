@@ -1,0 +1,7 @@
+:host {
+  display: block;
+}
+
+mat-dialog-actions button .mat-icon {
+  margin-right: 0.35rem;
+}

@@ -1,0 +1,10 @@
+:host {
+  display: block;
+}
+
+.category-chip .mat-icon,
+.price-tag .mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}

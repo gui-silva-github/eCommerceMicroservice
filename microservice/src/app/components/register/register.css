@@ -1,0 +1,13 @@
+:host {
+  display: block;
+}
+
+.card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-title .mat-icon {
+  color: var(--primary-600);
+}

@@ -1,0 +1,82 @@
+<div class="container">
+  <mat-card class="w-50 auth-card">
+    <mat-card-header>
+      <mat-card-title class="card-title">
+        <mat-icon aria-hidden="true">person_add</mat-icon>
+        Cadastro
+      </mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content class="flex flex-column">
+      @if (errorMessage(); as message) {
+        <div class="app-alert app-alert--error" role="alert">
+          <mat-icon aria-hidden="true">error_outline</mat-icon>
+          <div class="app-alert__content">
+            <p class="app-alert__title">Não foi possível cadastrar</p>
+            <p class="app-alert__message">{{ message }}</p>
+          </div>
+        </div>
+      }
+
+      <form [formGroup]="registerForm" (ngSubmit)="register()">
+        <mat-form-field class="w-100">
+          <mat-label>Nome</mat-label>
+          <mat-icon matPrefix aria-hidden="true">badge</mat-icon>
+          <input matInput placeholder="Seu nome completo" formControlName="PersonName" />
+          @if (personNameFormControl.hasError('required')) {
+            <mat-error>Nome é obrigatório</mat-error>
+          } @else if (hasApiError(personNameFormControl)) {
+            <mat-error>{{ getApiError(personNameFormControl) }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="w-100">
+          <mat-label>Email</mat-label>
+          <mat-icon matPrefix aria-hidden="true">email</mat-icon>
+          <input matInput type="email" placeholder="seu@email.com" formControlName="Email" />
+          @if (emailFormControl.hasError('required')) {
+            <mat-error>Email é obrigatório</mat-error>
+          } @else if (emailFormControl.hasError('email')) {
+            <mat-error>Formato inválido</mat-error>
+          } @else if (hasApiError(emailFormControl)) {
+            <mat-error>{{ getApiError(emailFormControl) }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="w-100">
+          <mat-label>Senha</mat-label>
+          <mat-icon matPrefix aria-hidden="true">lock</mat-icon>
+          <input matInput type="password" placeholder="Mínimo 3 caracteres" formControlName="Password" />
+          @if (passwordFormControl.hasError('required')) {
+            <mat-error>Senha é obrigatória</mat-error>
+          } @else if (hasApiError(passwordFormControl)) {
+            <mat-error>{{ getApiError(passwordFormControl) }}</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="w-100">
+          <mat-label>Gênero</mat-label>
+          <mat-icon matPrefix aria-hidden="true">wc</mat-icon>
+          <mat-select formControlName="Gender">
+            <mat-option value="Masculino">Masculino</mat-option>
+            <mat-option value="Feminino">Feminino</mat-option>
+            <mat-option value="Outros">Outros</mat-option>
+          </mat-select>
+          @if (genderFormControl.hasError('required')) {
+            <mat-error>Gênero é obrigatório</mat-error>
+          } @else if (hasApiError(genderFormControl)) {
+            <mat-error>{{ getApiError(genderFormControl) }}</mat-error>
+          }
+        </mat-form-field>
+
+        <div class="flex button-panel">
+          <div class="empty"></div>
+          <button mat-flat-button color="primary" type="submit" class="btn-primary-action" [disabled]="isSubmitting()">
+            <mat-icon aria-hidden="true">{{ isSubmitting() ? 'hourglass_top' : 'how_to_reg' }}</mat-icon>
+            {{ isSubmitting() ? 'Cadastrando...' : 'Criar conta' }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

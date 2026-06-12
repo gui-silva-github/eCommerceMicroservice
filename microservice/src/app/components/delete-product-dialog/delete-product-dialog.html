@@ -1,0 +1,50 @@
+<div class="dialog-header">
+  <span class="dialog-header__icon-wrap" aria-hidden="true">
+    <mat-icon class="dialog-header__icon">delete_forever</mat-icon>
+  </span>
+  <div class="dialog-header__text">
+    <h2 mat-dialog-title class="dialog-header__title">Excluir produto</h2>
+    <p class="dialog-header__subtitle">Esta ação é permanente e não pode ser desfeita.</p>
+  </div>
+</div>
+
+<mat-dialog-content>
+  <p class="dialog-message">
+    Confirme se deseja remover o produto selecionado do catálogo.
+  </p>
+
+  <div class="dialog-product">
+    <p class="dialog-product__name">{{ data.product.productName }}</p>
+    <div class="dialog-product__meta">
+      <span class="dialog-product__chip">
+        <mat-icon aria-hidden="true">category</mat-icon>
+        {{ data.product.category }}
+      </span>
+      <span class="dialog-product__chip dialog-product__chip--price">
+        <mat-icon aria-hidden="true">sell</mat-icon>
+        {{ data.product.unitPrice | currency:'BRL':'symbol':'1.2-2' }}
+      </span>
+      <span class="dialog-product__chip">
+        <mat-icon aria-hidden="true">inventory_2</mat-icon>
+        {{ data.product.quantityInStock }} em estoque
+      </span>
+    </div>
+  </div>
+
+  @if (errorMessage) {
+    <p class="dialog-error" role="alert">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>{{ errorMessage }}</span>
+    </p>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cancel()" [disabled]="isDeleting">
+    Cancelar
+  </button>
+  <button mat-flat-button color="warn" type="button" class="dialog-actions-danger" (click)="confirm()" [disabled]="isDeleting">
+    <mat-icon aria-hidden="true">{{ isDeleting ? 'hourglass_top' : 'delete_outline' }}</mat-icon>
+    {{ isDeleting ? 'Excluindo...' : 'Excluir produto' }}
+  </button>
+</mat-dialog-actions>
