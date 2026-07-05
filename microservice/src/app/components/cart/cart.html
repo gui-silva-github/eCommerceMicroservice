@@ -1,0 +1,109 @@
+<div class="page-header">
+  <span class="page-header__icon" aria-hidden="true">
+    <mat-icon>shopping_cart</mat-icon>
+  </span>
+  <div class="page-header__text">
+    <span>Carrinho de Compras</span>
+    <span class="page-header__subtitle">Revise os itens antes de finalizar seu pedido</span>
+  </div>
+</div>
+
+@if (cartService.isEmpty()) {
+  <div class="empty-state" role="status">
+    <span class="empty-state__icon" aria-hidden="true">
+      <mat-icon>remove_shopping_cart</mat-icon>
+    </span>
+    <p class="empty-state__title">Seu carrinho está vazio</p>
+    <p class="empty-state__hint">Explore o catálogo e adicione produtos para começar uma compra.</p>
+    <a mat-stroked-button color="primary" [routerLink]="['/products', 'showcase']">
+      <mat-icon>storefront</mat-icon>
+      Ir para o catálogo
+    </a>
+  </div>
+} @else {
+  <div class="cart-layout">
+    <div class="cart-items">
+      @for (item of cartService.cartItems(); track item.productID) {
+        <mat-card class="cart-item">
+          <mat-card-header>
+            <mat-card-title>{{ item.productName }}</mat-card-title>
+            <mat-card-subtitle>
+              {{ item.unitPrice | currency:'BRL':'symbol':'1.2-2' }} cada
+            </mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="cart-item__controls">
+              <div class="quantity-controls">
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="decreaseQuantity(item.productID, item.quantity)"
+                  aria-label="Diminuir quantidade"
+                >
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <span class="quantity-value">{{ item.quantity }}</span>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="increaseQuantity(item.productID, item.quantity)"
+                  aria-label="Aumentar quantidade"
+                >
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+
+              <strong class="item-total">
+                {{ item.unitPrice * item.quantity | currency:'BRL':'symbol':'1.2-2' }}
+              </strong>
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions align="end">
+            <button mat-button color="warn" type="button" (click)="removeItem(item.productID)">
+              <mat-icon>delete_outline</mat-icon>
+              Remover
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      }
+    </div>
+
+    <mat-card class="cart-summary">
+      <mat-card-header>
+        <mat-card-title>Resumo do pedido</mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="summary-row">
+          <span>Itens</span>
+          <span>{{ cartService.itemCount() }}</span>
+        </div>
+        <div class="summary-row summary-row--total">
+          <span>Total</span>
+          <strong>{{ cartService.totalAmount() | currency:'BRL':'symbol':'1.2-2' }}</strong>
+        </div>
+        <mat-divider></mat-divider>
+
+        @if (checkoutError()) {
+          <p class="checkout-error" role="alert">{{ checkoutError() }}</p>
+        }
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="btn-primary-action"
+          [disabled]="isSubmitting()"
+          (click)="checkout()"
+        >
+          <mat-icon>{{ isSubmitting() ? 'hourglass_top' : 'shopping_bag' }}</mat-icon>
+          {{ isSubmitting() ? 'Finalizando...' : 'Finalizar pedido' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+}

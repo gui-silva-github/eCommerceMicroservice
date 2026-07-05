@@ -1,0 +1,88 @@
+<div class="page-toolbar">
+  <div class="page-header">
+    <span class="page-header__icon" aria-hidden="true">
+      <mat-icon>receipt</mat-icon>
+    </span>
+    <div class="page-header__text">
+      <span>Detalhes do Pedido</span>
+      <span class="page-header__subtitle">Informações completas da compra</span>
+    </div>
+  </div>
+
+  <a mat-stroked-button color="primary" [routerLink]="[usersService.isAdmin ? '/admin/orders' : '/orders']">
+    <mat-icon>arrow_back</mat-icon>
+    Voltar
+  </a>
+</div>
+
+@if (loading()) {
+  <div class="empty-state" role="status">
+    <span class="empty-state__icon" aria-hidden="true">
+      <mat-icon>hourglass_top</mat-icon>
+    </span>
+    <p class="empty-state__title">Carregando pedido...</p>
+  </div>
+} @else if (error(); as errorMessage) {
+  <div class="empty-state" role="alert">
+    <span class="empty-state__icon" aria-hidden="true">
+      <mat-icon>error_outline</mat-icon>
+    </span>
+    <p class="empty-state__title">Pedido indisponível</p>
+    <p class="empty-state__hint">{{ errorMessage }}</p>
+  </div>
+} @else if (order(); as currentOrder) {
+  <mat-card class="order-detail-card">
+    <mat-card-header>
+      <mat-card-title>Pedido #{{ currentOrder.orderID }}</mat-card-title>
+      <mat-card-subtitle>{{ currentOrder.orderDate | date:'dd/MM/yyyy HH:mm' }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="order-info-grid">
+        <div class="info-block">
+          <span class="info-label">Usuário</span>
+          <span class="info-value">{{ currentOrder.userID }}</span>
+        </div>
+        <div class="info-block">
+          <span class="info-label">Total</span>
+          <span class="info-value info-value--highlight">
+            {{ currentOrder.totalBill | currency:'BRL':'symbol':'1.2-2' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="data-panel">
+        <table mat-table [dataSource]="currentOrder.orderItems" class="data-table">
+          <ng-container matColumnDef="productID">
+            <th mat-header-cell *matHeaderCellDef>Produto</th>
+            <td mat-cell *matCellDef="let item">
+              <strong>{{ item.productID.slice(0, 8) }}...</strong>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="unitPrice">
+            <th mat-header-cell *matHeaderCellDef>Preço Unit.</th>
+            <td mat-cell *matCellDef="let item">
+              <span class="cell-price">{{ item.unitPrice | currency:'BRL':'symbol':'1.2-2' }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="quantity">
+            <th mat-header-cell *matHeaderCellDef>Qtd.</th>
+            <td mat-cell *matCellDef="let item">{{ item.quantity }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="totalPrice">
+            <th mat-header-cell *matHeaderCellDef>Subtotal</th>
+            <td mat-cell *matCellDef="let item">
+              <span class="cell-price">{{ item.totalPrice | currency:'BRL':'symbol':'1.2-2' }}</span>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}

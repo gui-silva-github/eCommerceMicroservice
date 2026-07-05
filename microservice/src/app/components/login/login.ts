@@ -53,9 +53,11 @@ export class Login {
       next: (response: AuthenticationResponse) => {
         this.isSubmitting.set(false);
 
-        if (response.success) {
-          const isAdmin = response.userID === 'admin_id';
-          this.usersService.setAuthStatus(response.token, isAdmin, response.personName);
+        const auth = this.usersService.normalizeAuthResponse(response as unknown as Record<string, unknown>);
+
+        if (auth.success) {
+          const isAdmin = auth.userID === '00000000-0000-0000-0000-000000000001';
+          this.usersService.setAuthStatus(auth.token, isAdmin, auth.personName, auth.userID);
           this.router.navigate(['/products', 'showcase']);
           return;
         }

@@ -6,7 +6,10 @@ import { Search } from './components/search/search';
 import { Products } from './components/products/products';
 import { EditProduct } from './components/edit-product/edit-product';
 import { NewProduct } from './components/new-product/new-product';
-import { ComingSoon } from './components/coming-soon/coming-soon';
+import { Cart } from './components/cart/cart';
+import { Orders } from './components/orders/orders';
+import { OrderDetail } from './components/order-detail/order-detail';
+import { AdminOrders } from './components/admin-orders/admin-orders';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'products/showcase', pathMatch: 'full' },
@@ -18,23 +21,9 @@ export const routes: Routes = [
   { path: 'products/create', component: NewProduct },
   { path: 'products/edit/:productID', component: EditProduct },
   { path: 'admin/products', component: Products },
-  {
-    path: 'cart',
-    component: ComingSoon,
-    data: {
-      icon: 'shopping_cart',
-      title: 'Carrinho',
-      message: 'Seu carrinho de compras aparecerá aqui em breve.',
-    },
-  },
-  {
-    path: 'orders',
-    component: ComingSoon,
-    data: {
-      icon: 'receipt_long',
-      title: 'Pedidos',
-      message: 'O histórico de pedidos ficará disponível nesta área.',
-    },
-  },
+  { path: 'admin/orders', component: AdminOrders },
+  { path: 'cart', component: Cart },
+  { path: 'orders', component: Orders },
+  { path: 'orders/:orderID', component: OrderDetail },
   { path: '**', redirectTo: 'products/showcase' },
 ];

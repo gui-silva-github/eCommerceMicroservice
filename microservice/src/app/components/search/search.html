@@ -42,6 +42,13 @@
     </a>
   </div>
 } @else {
+  @if (cartService.feedbackMessage(); as feedback) {
+    <div class="cart-feedback" role="status">
+      <mat-icon aria-hidden="true">check_circle</mat-icon>
+      {{ feedback }}
+    </div>
+  }
+
   <div class="product-grid">
     @for (product of products(); track product.productID) {
       <mat-card class="product">
@@ -64,12 +71,12 @@
         </mat-card-content>
 
         <mat-card-actions>
-          @if (usersService.isAuthenticated) {
-            <button mat-flat-button color="primary" class="btn-icon-action">
+          @if (usersService.isAuthenticated && !usersService.isAdmin) {
+            <button mat-flat-button color="primary" class="btn-icon-action" type="button" (click)="addToCart(product)">
               <mat-icon aria-hidden="true">add_shopping_cart</mat-icon>
               Adicionar ao Carrinho
             </button>
-          } @else {
+          } @else if (!usersService.isAuthenticated) {
             <a mat-button color="primary" [routerLink]="['/auth', 'login']" class="btn-icon-action">
               <mat-icon aria-hidden="true">login</mat-icon>
               Login para comprar

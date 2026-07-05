@@ -1,4 +1,4 @@
-import { Component } from "@angular/core";
+import { Component, inject } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatInputModule } from '@angular/material/input';
@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatToolbarModule } from "@angular/material/toolbar";
 import { RouterModule } from "@angular/router";
 import { UsersService } from './services/users.service';
+import { CartService } from './services/cart.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
@@ -20,20 +21,18 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
   styleUrl: './app.css'
 })
 export class AppComponent {
-  searchForm: FormGroup;
+  readonly usersService = inject(UsersService);
+  readonly cartService = inject(CartService);
+  private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder);
 
-  constructor (
-    public usersService: UsersService,
-    private router: Router,
-    private fb: FormBuilder,
-  ) {
-    this.searchForm = this.fb.group({
-      searchStr: ['', []]
-    });
-  }
+  searchForm: FormGroup = this.fb.group({
+    searchStr: ['', []]
+  });
 
   logout() {
     this.usersService.logout();
+    this.cartService.clear();
     this.router.navigate(['/products', 'showcase']);
   }
 

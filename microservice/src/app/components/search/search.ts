@@ -8,6 +8,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { UsersService } from '../../services/users.service';
+import { CartService } from '../../services/cart.service';
 
 @Component({
   selector: 'app-search',
@@ -26,6 +27,7 @@ export class Search implements OnInit {
   private readonly productsService = inject(ProductsService);
   private readonly activatedRoute = inject(ActivatedRoute);
   readonly usersService = inject(UsersService);
+  readonly cartService = inject(CartService);
 
   readonly products = signal<ProductResponse[]>([]);
   readonly searchTerm = signal('');
@@ -52,5 +54,13 @@ export class Search implements OnInit {
         },
       });
     });
+  }
+
+  addToCart(product: ProductResponse): void {
+    if (this.usersService.isAdmin) {
+      return;
+    }
+
+    this.cartService.addProduct(product);
   }
 }

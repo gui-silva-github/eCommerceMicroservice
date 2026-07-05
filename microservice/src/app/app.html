@@ -11,9 +11,12 @@
     </a>
 
     @if (usersService.isAuthenticated && usersService.isAdmin == false) {
-      <a mat-button [routerLink]="['/cart']" class="side-bar-button" routerLinkActive="active-link">
+      <a mat-button [routerLink]="['/cart']" class="side-bar-button cart-link" routerLinkActive="active-link">
         <mat-icon aria-hidden="true">shopping_cart</mat-icon>
         <span>Carrinho</span>
+        @if (cartService.itemCount() > 0) {
+          <span class="cart-badge">{{ cartService.itemCount() }}</span>
+        }
       </a>
     }
 
@@ -28,6 +31,13 @@
       <a mat-button [routerLink]="['/admin', 'products']" class="side-bar-button" routerLinkActive="active-link">
         <mat-icon aria-hidden="true">inventory_2</mat-icon>
         <span>Produtos</span>
+      </a>
+    }
+
+    @if (usersService.isAuthenticated && usersService.isAdmin) {
+      <a mat-button [routerLink]="['/admin', 'orders']" class="side-bar-button" routerLinkActive="active-link">
+        <mat-icon aria-hidden="true">assignment</mat-icon>
+        <span>Pedidos</span>
       </a>
     }
 

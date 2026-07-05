@@ -7,6 +7,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
 import { UsersService } from '../../services/users.service';
+import { ProductResponse } from '../../models/product-response';
+import { CartService } from '../../services/cart.service';
 
 @Component({
   selector: 'app-show-case',
@@ -24,10 +26,19 @@ import { UsersService } from '../../services/users.service';
 export class ShowCase {
   readonly productsService = inject(ProductsService);
   readonly usersService = inject(UsersService);
+  readonly cartService = inject(CartService);
 
   constructor() {
     if (!this.productsService.hasProducts()) {
       this.productsService.loadCatalog();
     }
+  }
+
+  addToCart(product: ProductResponse): void {
+    if (this.usersService.isAdmin) {
+      return;
+    }
+
+    this.cartService.addProduct(product);
   }
 }

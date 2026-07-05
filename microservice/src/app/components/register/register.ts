@@ -58,7 +58,8 @@ export class Register {
     this.usersService.register(this.registerForm.value).subscribe({
       next: (response: AuthenticationResponse) => {
         this.isSubmitting.set(false);
-        this.usersService.setAuthStatus(response.token, false, response.personName);
+        const auth = this.usersService.normalizeAuthResponse(response as unknown as Record<string, unknown>);
+        this.usersService.setAuthStatus(auth.token, false, auth.personName, auth.userID);
         this.router.navigate(['/products', 'showcase']);
       },
       error: (error) => {

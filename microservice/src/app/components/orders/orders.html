@@ -1,0 +1,75 @@
+<div class="page-header">
+  <span class="page-header__icon" aria-hidden="true">
+    <mat-icon>receipt_long</mat-icon>
+  </span>
+  <div class="page-header__text">
+    <span>Meus Pedidos</span>
+    <span class="page-header__subtitle">Acompanhe o histórico das suas compras</span>
+  </div>
+</div>
+
+@if (ordersService.loading()) {
+  <div class="empty-state" role="status">
+    <span class="empty-state__icon" aria-hidden="true">
+      <mat-icon>hourglass_top</mat-icon>
+    </span>
+    <p class="empty-state__title">Carregando pedidos...</p>
+  </div>
+} @else if (ordersService.error(); as errorMessage) {
+  <div class="empty-state" role="alert">
+    <span class="empty-state__icon" aria-hidden="true">
+      <mat-icon>cloud_off</mat-icon>
+    </span>
+    <p class="empty-state__title">Falha ao carregar</p>
+    <p class="empty-state__hint">{{ errorMessage }}</p>
+    <button mat-stroked-button color="primary" type="button" (click)="reloadOrders()">
+      <mat-icon>refresh</mat-icon>
+      Tentar novamente
+    </button>
+  </div>
+} @else if (!ordersService.hasOrders()) {
+  <div class="empty-state" role="status">
+    <span class="empty-state__icon" aria-hidden="true">
+      <mat-icon>shopping_bag</mat-icon>
+    </span>
+    <p class="empty-state__title">Nenhum pedido encontrado</p>
+    <p class="empty-state__hint">Seus pedidos aparecerão aqui após finalizar uma compra no carrinho.</p>
+    <a mat-stroked-button color="primary" [routerLink]="['/products', 'showcase']">
+      <mat-icon>storefront</mat-icon>
+      Ir para o catálogo
+    </a>
+  </div>
+} @else {
+  <div class="orders-grid">
+    @for (order of ordersService.orders(); track order.orderID) {
+      <mat-card class="order-card">
+        <mat-card-header>
+          <mat-card-title>Pedido #{{ order.orderID.slice(0, 8) }}</mat-card-title>
+          <mat-card-subtitle>
+            {{ order.orderDate | date:'dd/MM/yyyy HH:mm' }}
+          </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="order-meta">
+            <span class="order-meta__item">
+              <mat-icon aria-hidden="true">inventory_2</mat-icon>
+              {{ order.orderItems.length }} item(ns)
+            </span>
+            <span class="order-meta__item order-meta__total">
+              <mat-icon aria-hidden="true">payments</mat-icon>
+              {{ order.totalBill | currency:'BRL':'symbol':'1.2-2' }}
+            </span>
+          </div>
+        </mat-card-content>
+
+        <mat-card-actions align="end">
+          <a mat-stroked-button color="primary" [routerLink]="['/orders', order.orderID]">
+            <mat-icon>visibility</mat-icon>
+            Ver detalhes
+          </a>
+        </mat-card-actions>
+      </mat-card>
+    }
+  </div>
+}
