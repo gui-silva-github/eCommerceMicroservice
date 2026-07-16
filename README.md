@@ -239,7 +239,7 @@ flowchart TB
 
 ---
 
-## Docker
+## Docker e Docker Compose
 
 Cada microserviço possui `Dockerfile` na camada API. Exemplo (Orders):
 
