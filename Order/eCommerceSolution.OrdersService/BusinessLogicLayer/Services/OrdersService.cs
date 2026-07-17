@@ -76,13 +76,8 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Services
         public async Task<OrderResponse?> GetOrderByOrderID(Guid orderID)
         {
             Order? order = await _ordersRepository.GetOrderByOrderID(orderID);
-
-            if (order == null)
-            {
-                return null;
-            }
-
-            return _mapper.Map<OrderResponse>(order);
+            
+            return order != null ? _mapper.Map<OrderResponse>(order) : null;
         }
 
         public async Task<List<OrderResponse?>> GetOrders()
@@ -113,43 +108,32 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Services
             return orderResponses.ToList();
         }
 
-        public async Task<OrderResponse?> UpdateOrder(Guid orderID, OrderUpdateRequest orderUpdateRequest)
+        public async Task<OrderResponse?> UpdateOrder(Guid orderId, OrderUpdateRequest request)
         {
-            if (orderUpdateRequest == null)
-            {
-                throw new ArgumentNullException(nameof(orderUpdateRequest));
-            }
+            ArgumentNullException.ThrowIfNull(request);
 
-            if (orderID != orderUpdateRequest.OrderID)
-            {
-                throw new BusinessException("Order ID não equipara com Order ID do Body");
-            }
+            if (orderId != request.OrderID)
+                throw new BusinessException("O ID informado na rota deve ser igual ao ID enviado no corpo da requisição.");
 
-            Order? existingOrder = await _ordersRepository.GetOrderByOrderID(orderUpdateRequest.OrderID);
+            var existingOrder = await _ordersRepository.GetOrderByOrderID(request.OrderID);
 
-            if (existingOrder == null)
-            {
-                throw new BusinessException("ID do pedido inválido.");
-            }
+            if (existingOrder is null)
+                throw new BusinessException("Pedido não encontrado.");
 
-            await ValidateAsync(_orderUpdateRequestValidator, orderUpdateRequest);
+            await ValidateAsync(_orderUpdateRequestValidator, request);
 
-            foreach (OrderItemUpdateRequest orderItemUpdateRequest in orderUpdateRequest.OrderItems)
-            {
-                await ValidateAsync(_orderItemUpdateRequestValidator, orderItemUpdateRequest);
-            }
+            foreach (var orderItem in request.OrderItems)
+                await ValidateAsync(_orderItemUpdateRequestValidator, orderItem);
 
-            Order orderInput = _mapper.Map<Order>(orderUpdateRequest);
-            CalculateOrderTotals(orderInput);
+            var order = _mapper.Map<Order>(request);
 
-            Order? updatedOrder = await _ordersRepository.UpdateOrder(orderInput);
+            CalculateOrderTotals(order);
 
-            if (updatedOrder == null)
-            {
-                return null;
-            }
+            var updatedOrder = await _ordersRepository.UpdateOrder(order);
 
-            return _mapper.Map<OrderResponse>(updatedOrder);
+            return updatedOrder is null
+                ? null
+                : _mapper.Map<OrderResponse>(updatedOrder);
         }
 
         private static void CalculateOrderTotals(Order order)
