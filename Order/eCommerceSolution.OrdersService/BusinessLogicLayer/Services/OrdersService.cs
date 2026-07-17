@@ -76,13 +76,8 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Services
         public async Task<OrderResponse?> GetOrderByOrderID(Guid orderID)
         {
             Order? order = await _ordersRepository.GetOrderByOrderID(orderID);
-
-            if (order == null)
-            {
-                return null;
-            }
-
-            return _mapper.Map<OrderResponse>(order);
+            
+            return order != null ? _mapper.Map<OrderResponse>(order) : null;
         }
 
         public async Task<List<OrderResponse?>> GetOrders()
