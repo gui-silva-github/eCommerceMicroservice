@@ -31,7 +31,7 @@ namespace eCommerce.OrdersMicroservice.API.Controllers
             OrderResponse? order = await _ordersService.GetOrderByOrderID(orderID);
 
             return order is null
-                ? NotFound(new ApiErrorResponse("Pedido não encontrado.", type: "NotFound"))
+                ? NotFound(new ApiErrorResponse("Pedido não encontrado.", Type: "NotFound"))
                 : Ok(order);
         }
 
