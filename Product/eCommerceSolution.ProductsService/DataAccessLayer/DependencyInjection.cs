@@ -13,9 +13,10 @@ namespace eCommerce.ProductsService.DataAccessLayer
         {
             string connectionStringTemplate = configuration.GetConnectionString("DefaultConnection")!;
             string connectionString = connectionStringTemplate
-               .Replace("$MYSQL_HOST", Environment.GetEnvironmentVariable("MYSQL_HOST") ?? "localhost");
+               .Replace("$MYSQL_HOST", Environment.GetEnvironmentVariable("MYSQL_HOST") ?? "localhost")
+               .Replace("$MYSQL_USER", Environment.GetEnvironmentVariable("MYSQL_USER") ?? "root")
                .Replace("$MYSQL_PASSWORD", Environment.GetEnvironmentVariable("MYSQL_PASSWORD") ?? "admin");
-            
+
             services.AddDbContext<ApplicationDbContext>(options =>
             {
                 options.UseMySQL(connectionString);
