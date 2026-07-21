@@ -20,14 +20,17 @@ Solução de e-commerce distribuída com **3 microserviços .NET 8**, frontend *
 ## Estrutura do repositório
 
 ```
-MicroService/
+eCommerceMicroservice/
 ├── User/eCommerceSolution.UsersService/       # Microserviço de usuários
 ├── Product/eCommerceSolution.ProductsService/   # Microserviço de produtos
 ├── Order/eCommerceSolution.OrdersService/       # Microserviço de pedidos
 ├── microservice/                                # Frontend Angular
+├── docker/                                      # Scripts de init dos bancos
+├── docker-compose.yml                           # Orquestração local
+├── .env.example                                 # Variáveis de ambiente
 ├── docs/
 │   └── architecture-microservices.png           # Diagrama de arquitetura
-└── markdown/                                    # Anotações e materiais de estudo
+└── mysql/                                       # Script legado MySQL (referência)
 ```
 
 ---
@@ -241,11 +244,53 @@ flowchart TB
 
 ## Docker e Docker Compose
 
-Cada microserviço possui `Dockerfile` na camada API. Exemplo (Orders):
+Stack completa (Angular + 3 APIs + PostgreSQL + MySQL + MongoDB) via Compose, com **database per service**, health checks e configuração externalizada. O frontend roda `npm ci` + `ng build` no build da imagem e é servido pelo nginx.
+
+### Subir tudo
+
+```bash
+cp .env.example .env
+docker compose up --build -d
+```
+
+| Serviço | URL (HTTP) | Swagger |
+|---------|------------|---------|
+| **Frontend Angular** | `http://localhost:4200` | — |
+| UsersService | `http://localhost:7186` | `/swagger` |
+| ProductsService | `http://localhost:7187` | `/swagger` |
+| OrdersService | `http://localhost:7094` | `/swagger` |
+
+```bash
+# logs
+docker compose logs -f
+
+# parar e remover containers (volumes preservados)
+docker compose down
+
+# reset completo dos dados
+docker compose down -v
+```
+
+### Estrutura Docker
+
+```
+docker-compose.yml
+.env.example
+docker/
+├── postgres/init/01-users.sql      # schema Users + seed admin
+└── mysql/init/01-products.sql      # schema Products + seed catálogo
+microservice/
+├── Dockerfile                      # npm ci + ng build → nginx
+└── docker/nginx.conf               # SPA fallback
+```
+
+Cada API e o frontend possuem `Dockerfile` multi-stage. Exemplo manual (Orders):
 
 ```bash
 docker build -t orders-service -f Order/eCommerceSolution.OrdersService/API/Dockerfile Order/eCommerceSolution.OrdersService
 ```
+
+> **Nota:** as APIs no Docker usam **HTTP**. O `environment.ts` já aponta para `http://localhost:7186|7187|7094` — o browser chama as APIs no host (não pelos nomes dos containers).
 
 ---
 
