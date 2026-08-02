@@ -1,0 +1,187 @@
+# =============================================================================
+# e-Commerce Microservices — Docker Compose
+# =============================================================================
+# Princípios aplicados:
+#   - Database per service (PostgreSQL / MySQL / MongoDB)
+#   - Configuração externalizada (.env)
+#   - Health checks + depends_on (startup ordenado)
+#   - Rede isolada + volumes nomeados
+#   - Um container = uma responsabilidade
+#   - Frontend Angular (build npm + nginx)
+#
+# Uso:
+#   cp .env.example .env
+#   docker compose up --build -d
+# =============================================================================
+
+name: ecommerce-microservices
+
+services:
+  # ---------------------------------------------------------------------------
+  # Infraestrutura — bancos (database per service)
+  # ---------------------------------------------------------------------------
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  mysql:
+    image: mysql:8.0
+    container_name: ecommerce-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "${MYSQL_PORT}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - ecommerce-network
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 40s
+
+  mongodb:
+    image: mongo:7
+    container_name: ecommerce-mongodb
+    restart: unless-stopped
+    ports:
+      - "${MONGODB_PORT}:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand({ ping: 1 }).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # ---------------------------------------------------------------------------
+  # Aplicações — microserviços .NET 8
+  # ---------------------------------------------------------------------------
+
+  users-api:
+    build:
+      context: ./User/eCommerceSolution.UsersService
+      dockerfile: eCommerce.API/Dockerfile
+    image: ecommerce-users-api:latest
+    container_name: ecommerce-users-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__PostgresConnection: >-
+        Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+    ports:
+      - "${USERS_API_PORT}:8080"
+    networks:
+      - ecommerce-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  products-api:
+    build:
+      context: ./Product/eCommerceSolution.ProductsService
+      dockerfile: ProductsMicroService.API/Dockerfile
+    image: ecommerce-products-api:latest
+    container_name: ecommerce-products-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ASPNETCORE_URLS: http://+:8080
+      MYSQL_HOST: mysql
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "${PRODUCTS_API_PORT}:8080"
+    networks:
+      - ecommerce-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  orders-api:
+    build:
+      context: ./Order/eCommerceSolution.OrdersService
+      dockerfile: API/Dockerfile
+    image: ecommerce-orders-api:latest
+    container_name: ecommerce-orders-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ASPNETCORE_URLS: http://+:8080
+      MONGODB_HOST: mongodb
+      MONGODB_PORT: 27017
+    ports:
+      - "${ORDERS_API_PORT}:8080"
+    networks:
+      - ecommerce-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Frontend — Angular SPA (npm ci + ng build → nginx)
+  # O browser chama as APIs via localhost (environment.ts); CORS liberado em :4200
+  # ---------------------------------------------------------------------------
+
+  frontend:
+    build:
+      context: ./microservice
+      dockerfile: Dockerfile
+    image: ecommerce-frontend:latest
+    container_name: ecommerce-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT}:80"
+    networks:
+      - ecommerce-network
+    depends_on:
+      - users-api
+      - products-api
+      - orders-api
+
+networks:
+  ecommerce-network:
+    name: ecommerce-network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: ecommerce-postgres-data
+  mysql_data:
+    name: ecommerce-mysql-data
+  mongodb_data:
+    name: ecommerce-mongodb-data

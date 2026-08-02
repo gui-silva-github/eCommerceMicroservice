@@ -1,0 +1,15 @@
+# Ignore build artifacts and IDE files for faster, cleaner image builds
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/*.*proj.user
+**/Dockerfile*
+**/.dockerignore
+**/charts
+**/docker-compose*
+**/secrets.dev.yaml
+**/values.dev.yaml
+README.md
+LICENSE

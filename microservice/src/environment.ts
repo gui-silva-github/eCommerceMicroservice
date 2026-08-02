@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://localhost:7186/api/Auth/',
-  productsMicroserviceUrl: 'https://localhost:7187/api/products',
-  ordersMicroserviceUrl: 'https://localhost:7094/api/Orders',
+  apiUrl: 'http://localhost:7186/api/Auth/',
+  productsMicroserviceUrl: 'http://localhost:7187/api/products',
+  ordersMicroserviceUrl: 'http://localhost:7094/api/Orders',
 };
