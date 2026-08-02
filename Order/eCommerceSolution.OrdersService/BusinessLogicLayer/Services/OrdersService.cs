@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.DTO;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.Exceptions;
+using eCommerce.OrdersMicroservice.BusinessLogicLayer.HttpClients;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.ServiceContracts;
 using eCommerce.OrdersMicroservice.DataAccessLayer.Entities;
 using eCommerce.OrdersMicroservice.DataAccessLayer.RepositoryContracts;
 using FluentValidation;
 using FluentValidation.Results;
+using Microsoft.Extensions.Logging;
 
 namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Services
 {
@@ -17,6 +19,9 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Services
         private readonly IValidator<OrderItemUpdateRequest> _orderItemUpdateRequestValidator;
         private readonly IMapper _mapper;
         private readonly IOrdersRepository _ordersRepository;
+        private readonly IUsersMicroserviceClient _usersMicroserviceClient;
+        private readonly IProductsMicroserviceClient _productsMicroserviceClient;
+        private readonly ILogger<OrdersService> _logger;
 
         public OrdersService(
             IOrdersRepository ordersRepository,
@@ -24,7 +29,10 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Services
             IValidator<OrderAddRequest> orderAddRequestValidator,
             IValidator<OrderItemAddRequest> orderItemAddRequestValidator,
             IValidator<OrderUpdateRequest> orderUpdateRequestValidator,
-            IValidator<OrderItemUpdateRequest> orderItemUpdateRequestValidator)
+            IValidator<OrderItemUpdateRequest> orderItemUpdateRequestValidator,
+            IUsersMicroserviceClient usersMicroserviceClient,
+            IProductsMicroserviceClient productsMicroserviceClient,
+            ILogger<OrdersService> logger)
         {
             _orderAddRequestValidator = orderAddRequestValidator;
             _orderItemAddRequestValidator = orderItemAddRequestValidator;
@@ -32,6 +40,9 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Services
             _orderItemUpdateRequestValidator = orderItemUpdateRequestValidator;
             _mapper = mapper;
             _ordersRepository = ordersRepository;
+            _usersMicroserviceClient = usersMicroserviceClient;
+            _productsMicroserviceClient = productsMicroserviceClient;
+            _logger = logger;
         }
 
         public async Task<OrderResponse?> AddOrder(OrderAddRequest orderAddRequest)
@@ -58,7 +69,8 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Services
                 return null;
             }
 
-            return _mapper.Map<OrderResponse>(addedOrder);
+            OrderResponse orderResponse = _mapper.Map<OrderResponse>(addedOrder);
+            return await EnrichOrderResponseAsync(orderResponse);
         }
 
         public async Task<bool> DeleteOrder(Guid orderID)
@@ -82,35 +94,32 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Services
                 return null;
             }
 
-            return _mapper.Map<OrderResponse>(order);
+            OrderResponse orderResponse = _mapper.Map<OrderResponse>(order);
+            return await EnrichOrderResponseAsync(orderResponse);
         }
 
         public async Task<List<OrderResponse?>> GetOrders()
         {
             IEnumerable<Order?> orders = await _ordersRepository.GetOrders();
-            IEnumerable<OrderResponse?> orderResponses = _mapper.Map<IEnumerable<OrderResponse?>>(orders);
-            return orderResponses.ToList();
+            return await EnrichOrdersAsync(orders);
         }
 
         public async Task<List<OrderResponse?>> GetOrdersByOrderDate(DateTime orderDate)
         {
             IEnumerable<Order?> orders = await _ordersRepository.GetOrdersByOrderDate(orderDate);
-            IEnumerable<OrderResponse?> orderResponses = _mapper.Map<IEnumerable<OrderResponse?>>(orders);
-            return orderResponses.ToList();
+            return await EnrichOrdersAsync(orders);
         }
 
         public async Task<List<OrderResponse?>> GetOrdersByProductID(Guid productID)
         {
             IEnumerable<Order?> orders = await _ordersRepository.GetOrdersByProductID(productID);
-            IEnumerable<OrderResponse?> orderResponses = _mapper.Map<IEnumerable<OrderResponse?>>(orders);
-            return orderResponses.ToList();
+            return await EnrichOrdersAsync(orders);
         }
 
         public async Task<List<OrderResponse?>> GetOrdersByUserID(Guid userID)
         {
             IEnumerable<Order?> orders = await _ordersRepository.GetOrdersByUserID(userID);
-            IEnumerable<OrderResponse?> orderResponses = _mapper.Map<IEnumerable<OrderResponse?>>(orders);
-            return orderResponses.ToList();
+            return await EnrichOrdersAsync(orders);
         }
 
         public async Task<OrderResponse?> UpdateOrder(Guid orderID, OrderUpdateRequest orderUpdateRequest)
@@ -149,7 +158,96 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Services
                 return null;
             }
 
-            return _mapper.Map<OrderResponse>(updatedOrder);
+            OrderResponse orderResponse = _mapper.Map<OrderResponse>(updatedOrder);
+            return await EnrichOrderResponseAsync(orderResponse);
+        }
+
+        private async Task<List<OrderResponse?>> EnrichOrdersAsync(IEnumerable<Order?> orders)
+        {
+            List<OrderResponse?> enrichedOrders = new();
+
+            foreach (Order? order in orders)
+            {
+                if (order == null)
+                {
+                    enrichedOrders.Add(null);
+                    continue;
+                }
+
+                OrderResponse orderResponse = _mapper.Map<OrderResponse>(order);
+                enrichedOrders.Add(await EnrichOrderResponseAsync(orderResponse));
+            }
+
+            return enrichedOrders;
+        }
+
+        /// <summary>
+        /// Enriquece o pedido com dados do UsersService e ProductsService via HttpClient (comunicação síncrona).
+        /// Falhas externas não bloqueiam a leitura — mantém IDs e deixa campos enriquecidos nulos.
+        /// </summary>
+        private async Task<OrderResponse> EnrichOrderResponseAsync(OrderResponse orderResponse)
+        {
+            string? personName = null;
+            string? email = null;
+
+            try
+            {
+                UserDTO? user = await _usersMicroserviceClient.GetUserByUserID(orderResponse.UserID);
+
+                if (user != null)
+                {
+                    personName = user.PersonName;
+                    email = user.Email;
+                }
+            }
+            catch (ExternalServiceUnavailableException ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Não foi possível enriquecer usuário {UserID} do pedido {OrderID}.",
+                    orderResponse.UserID,
+                    orderResponse.OrderID);
+            }
+
+            List<OrderItemResponse> enrichedItems = new();
+
+            foreach (OrderItemResponse item in orderResponse.OrderItems ?? new List<OrderItemResponse>())
+            {
+                string? productName = null;
+                string? category = null;
+
+                try
+                {
+                    ProductDTO? product = await _productsMicroserviceClient.GetProductByProductID(item.ProductID);
+
+                    if (product != null)
+                    {
+                        productName = product.ProductName;
+                        category = product.Category;
+                    }
+                }
+                catch (ExternalServiceUnavailableException ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Não foi possível enriquecer produto {ProductID} do pedido {OrderID}.",
+                        item.ProductID,
+                        orderResponse.OrderID);
+                }
+
+                enrichedItems.Add(item with
+                {
+                    ProductName = productName,
+                    Category = category
+                });
+            }
+
+            return orderResponse with
+            {
+                PersonName = personName,
+                Email = email,
+                OrderItems = enrichedItems
+            };
         }
 
         private static void CalculateOrderTotals(Order order)

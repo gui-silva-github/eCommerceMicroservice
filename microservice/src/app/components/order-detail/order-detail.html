@@ -40,7 +40,15 @@
     <mat-card-content>
       <div class="order-info-grid">
         <div class="info-block">
-          <span class="info-label">Usuário</span>
+          <span class="info-label">Cliente</span>
+          <span class="info-value">{{ currentOrder.personName || '—' }}</span>
+        </div>
+        <div class="info-block">
+          <span class="info-label">Email</span>
+          <span class="info-value">{{ currentOrder.email || '—' }}</span>
+        </div>
+        <div class="info-block">
+          <span class="info-label">User ID</span>
           <span class="info-value">{{ currentOrder.userID }}</span>
         </div>
         <div class="info-block">
@@ -56,7 +64,10 @@
           <ng-container matColumnDef="productID">
             <th mat-header-cell *matHeaderCellDef>Produto</th>
             <td mat-cell *matCellDef="let item">
-              <strong>{{ item.productID.slice(0, 8) }}...</strong>
+              <strong>{{ item.productName || (item.productID.slice(0, 8) + '...') }}</strong>
+              @if (item.category) {
+                <div class="cell-hint">{{ item.category }}</div>
+              }
             </td>
           </ng-container>
 

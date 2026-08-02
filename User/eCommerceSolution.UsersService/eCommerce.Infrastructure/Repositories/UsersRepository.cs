@@ -62,5 +62,14 @@ namespace eCommerce.Infrastructure.Repositories
                 query,
                 new { Email = email, Password = password });
         }
+
+        public async Task<ApplicationUser?> GetUserByUserID(Guid userID)
+        {
+            const string query = """SELECT * FROM public."Users" WHERE "UserID" = @UserID""";
+
+            return await _dbContext.DbConnection.QueryFirstOrDefaultAsync<ApplicationUser>(
+                query,
+                new { UserID = userID });
+        }
     }
 }

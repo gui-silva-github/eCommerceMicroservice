@@ -70,6 +70,7 @@ eCommerce.Infrastructure → Dapper, PostgreSQL
 |--------|----------|
 | `POST` | `/api/Auth/register` |
 | `POST` | `/api/Auth/login` |
+| `GET` | `/api/Users/{userID}` |
 
 ### ProductsService
 
@@ -213,6 +214,13 @@ O pedido referencia `UserID` e `ProductID` **sem foreign keys entre bancos** —
 
 ## Comunicação entre serviços
 
+Comunicação **síncrona** via `HttpClient` no OrdersService:
+
+| De | Para | Endpoint | Uso |
+|----|------|----------|-----|
+| Orders | Users | `GET /api/Users/{userID}` | Validar UserID + enriquecer `PersonName` / `Email` |
+| Orders | Products | `GET /api/products/search/product-id/{productID}` | Validar ProductID + enriquecer `ProductName` / `Category` |
+
 ```mermaid
 flowchart TB
     Angular["Angular SPA<br/>:4200"]
@@ -233,8 +241,8 @@ flowchart TB
     Products --> MySQL
     Orders --> Mongo
 
-    Orders -.->|"UserID"| Users
-    Orders -.->|"ProductID"| Products
+    Orders -->|"HttpClient GetUserByUserID"| Users
+    Orders -->|"HttpClient GetProductByProductID"| Products
 ```
 
 ---
@@ -261,5 +269,6 @@ docker build -t orders-service -f Order/eCommerceSolution.OrdersService/API/Dock
 | API REST + Swagger | Todos os serviços |
 | SPA multi-backend | Angular com 3 URLs |
 | Carrinho e checkout | Fluxo e-commerce completo |
+| Comunicação síncrona (HttpClient) | Orders → Users / Products |
 
----
+--- 

@@ -9,5 +9,7 @@ namespace eCommerce.Core.RepositoryContracts
         Task<ApplicationUser?> GetUserByEmail(string email);
 
         Task<ApplicationUser?> GetUserByEmailAndPassword(string? email, string? password);
+
+        Task<ApplicationUser?> GetUserByUserID(Guid userID);
     }
 }

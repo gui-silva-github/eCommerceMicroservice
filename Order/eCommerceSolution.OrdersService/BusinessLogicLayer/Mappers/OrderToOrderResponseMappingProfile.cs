@@ -8,7 +8,9 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Mappers
     {
         public OrderToOrderResponseMappingProfile()
         {
-            CreateMap<Order, OrderResponse>();
+            CreateMap<Order, OrderResponse>()
+                .ForMember(dest => dest.PersonName, opt => opt.Ignore())
+                .ForMember(dest => dest.Email, opt => opt.Ignore());
         }
     }
 }

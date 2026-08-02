@@ -52,9 +52,21 @@
 
         <mat-card-content>
           <div class="order-meta">
+            @if (order.personName || order.email) {
+              <span class="order-meta__item">
+                <mat-icon aria-hidden="true">person</mat-icon>
+                {{ order.personName || order.email }}
+              </span>
+            }
             <span class="order-meta__item">
               <mat-icon aria-hidden="true">inventory_2</mat-icon>
               {{ order.orderItems.length }} item(ns)
+              @if (order.orderItems[0]?.productName) {
+                — {{ order.orderItems[0].productName }}
+                @if (order.orderItems.length > 1) {
+                  +{{ order.orderItems.length - 1 }}
+                }
+              }
             </span>
             <span class="order-meta__item order-meta__total">
               <mat-icon aria-hidden="true">payments</mat-icon>

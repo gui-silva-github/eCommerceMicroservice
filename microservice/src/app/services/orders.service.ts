@@ -103,6 +103,8 @@ export class OrdersService {
       totalBill: Number(raw['totalBill'] ?? raw['TotalBill'] ?? 0),
       orderDate: String(raw['orderDate'] ?? raw['OrderDate'] ?? ''),
       orderItems: this.toOrderItems(orderItemsRaw),
+      personName: this.toOptionalString(raw['personName'] ?? raw['PersonName']),
+      email: this.toOptionalString(raw['email'] ?? raw['Email']),
     };
   }
 
@@ -118,7 +120,17 @@ export class OrdersService {
         unitPrice: Number(raw['unitPrice'] ?? raw['UnitPrice'] ?? 0),
         quantity: Number(raw['quantity'] ?? raw['Quantity'] ?? 0),
         totalPrice: Number(raw['totalPrice'] ?? raw['TotalPrice'] ?? 0),
+        productName: this.toOptionalString(raw['productName'] ?? raw['ProductName']),
+        category: this.toOptionalString(raw['category'] ?? raw['Category']),
       };
     });
+  }
+
+  private toOptionalString(value: unknown): string | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    return String(value);
   }
 }

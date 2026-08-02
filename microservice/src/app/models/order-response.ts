@@ -6,4 +6,6 @@ export interface OrderResponse {
   totalBill: number;
   orderDate: string;
   orderItems: OrderItemResponse[];
+  personName?: string | null;
+  email?: string | null;
 }

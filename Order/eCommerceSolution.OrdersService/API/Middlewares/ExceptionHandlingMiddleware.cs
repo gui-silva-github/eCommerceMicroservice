@@ -74,6 +74,12 @@ namespace eCommerce.OrdersMicroservice.API.Middlewares
                     HttpStatusCode.BadRequest,
                     new ApiErrorResponse(businessException.Message, Type: nameof(BusinessException))),
 
+                ExternalServiceUnavailableException externalServiceUnavailableException => (
+                    HttpStatusCode.ServiceUnavailable,
+                    new ApiErrorResponse(
+                        externalServiceUnavailableException.Message,
+                        Type: nameof(ExternalServiceUnavailableException))),
+
                 ArgumentException argumentException => (
                     HttpStatusCode.BadRequest,
                     new ApiErrorResponse(argumentException.Message, Type: nameof(ArgumentException))),

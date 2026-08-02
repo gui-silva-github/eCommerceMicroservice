@@ -3,4 +3,6 @@ export interface OrderItemResponse {
   unitPrice: number;
   quantity: number;
   totalPrice: number;
+  productName?: string | null;
+  category?: string | null;
 }

@@ -37,6 +37,14 @@
   border-bottom: none;
 }
 
+.data-table .cell-hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-secondary, #64748b);
+}
+
 .data-table .cell-category {
   color: var(--accent-600);
   font-weight: 600;

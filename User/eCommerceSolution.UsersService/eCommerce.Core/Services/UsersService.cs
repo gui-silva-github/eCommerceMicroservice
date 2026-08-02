@@ -59,6 +59,23 @@ namespace eCommerce.Core.Services
             return _mapper.Map<AuthenticationResponse>(registeredUser) with { Success = true, Token = "token" };
         }
 
+        public async Task<UserDTO> GetUserByUserID(Guid userID)
+        {
+            if (userID == Guid.Empty)
+            {
+                throw new BusinessException("User ID inválido.");
+            }
+
+            ApplicationUser? user = await _usersRepository.GetUserByUserID(userID);
+
+            if (user == null)
+            {
+                throw new NotFoundException("Usuário não encontrado.");
+            }
+
+            return _mapper.Map<UserDTO>(user);
+        }
+
         private static async Task ValidateAsync<T>(IValidator<T> validator, T instance)
         {
             ValidationResult validationResult = await validator.ValidateAsync(instance);

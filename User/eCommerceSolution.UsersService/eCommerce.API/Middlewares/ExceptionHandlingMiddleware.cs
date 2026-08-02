@@ -77,6 +77,10 @@ namespace eCommerce.API.Middlewares
                     HttpStatusCode.Conflict,
                     new ApiErrorResponse(conflictException.Message, Type: nameof(ConflictException))),
 
+                NotFoundException notFoundException => (
+                    HttpStatusCode.NotFound,
+                    new ApiErrorResponse(notFoundException.Message, Type: nameof(NotFoundException))),
+
                 BusinessException businessException => (
                     HttpStatusCode.BadRequest,
                     new ApiErrorResponse(businessException.Message, Type: nameof(BusinessException))),
