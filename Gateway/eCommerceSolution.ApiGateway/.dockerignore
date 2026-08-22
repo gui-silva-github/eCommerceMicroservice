@@ -1,0 +1,8 @@
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/*.*proj.user
+**/Dockerfile*
+**/.dockerignore
