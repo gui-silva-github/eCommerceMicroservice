@@ -3,11 +3,14 @@
 # =============================================================================
 # Princípios aplicados:
 #   - Database per service (PostgreSQL / MySQL / MongoDB)
+#   - API Gateway (Ocelot) + Rate Limit + File Cache + QoS Polly
+#   - Distributed cache (Redis)
+#   - Fault tolerance (Polly no Orders → Users / Products)
 #   - Configuração externalizada (.env)
 #   - Health checks + depends_on (startup ordenado)
 #   - Rede isolada + volumes nomeados
 #   - Um container = uma responsabilidade
-#   - Frontend Angular (build npm + nginx)
+#   - Frontend Angular (build npm + nginx) via gateway
 #
 # Uso:
 #   cp .env.example .env
@@ -18,7 +21,7 @@ name: ecommerce-microservices
 
 services:
   # ---------------------------------------------------------------------------
-  # Infraestrutura — bancos (database per service)
+  # Infraestrutura — bancos (database per service) + cache distribuído
   # ---------------------------------------------------------------------------
 
   postgres:
@@ -87,6 +90,24 @@ services:
       retries: 10
       start_period: 20s
 
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecommerce-network
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
   # ---------------------------------------------------------------------------
   # Aplicações — microserviços .NET 8
   # ---------------------------------------------------------------------------
@@ -124,12 +145,15 @@ services:
       MYSQL_HOST: mysql
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      ConnectionStrings__Redis: redis:6379
     ports:
       - "${PRODUCTS_API_PORT}:8080"
     networks:
       - ecommerce-network
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   orders-api:
@@ -144,6 +168,9 @@ services:
       ASPNETCORE_URLS: http://+:8080
       MONGODB_HOST: mongodb
       MONGODB_PORT: 27017
+      ConnectionStrings__Redis: redis:6379
+      UsersMicroserviceBaseUrl: http://users-api:8080
+      ProductsMicroserviceBaseUrl: http://products-api:8080
     ports:
       - "${ORDERS_API_PORT}:8080"
     networks:
@@ -151,10 +178,35 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+      users-api:
+        condition: service_started
+      products-api:
+        condition: service_started
+
+  api-gateway:
+    build:
+      context: ./Gateway/eCommerceSolution.ApiGateway
+      dockerfile: Dockerfile
+    image: ecommerce-api-gateway:latest
+    container_name: ecommerce-api-gateway
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_URLS: http://+:8080
+    ports:
+      - "${GATEWAY_PORT}:8080"
+    networks:
+      - ecommerce-network
+    depends_on:
+      - users-api
+      - products-api
+      - orders-api
 
   # ---------------------------------------------------------------------------
   # Frontend — Angular SPA (npm ci + ng build → nginx)
-  # O browser chama as APIs via localhost (environment.ts); CORS liberado em :4200
+  # O browser chama as APIs via API Gateway (environment.ts → :7010)
   # ---------------------------------------------------------------------------
 
   frontend:
@@ -169,9 +221,7 @@ services:
     networks:
       - ecommerce-network
     depends_on:
-      - users-api
-      - products-api
-      - orders-api
+      - api-gateway
 
 networks:
   ecommerce-network:
@@ -185,3 +235,5 @@ volumes:
     name: ecommerce-mysql-data
   mongodb_data:
     name: ecommerce-mongodb-data
+  redis_data:
+    name: ecommerce-redis-data

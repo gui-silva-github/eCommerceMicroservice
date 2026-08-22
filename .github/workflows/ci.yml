@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build UsersService
+        run: dotnet build User/eCommerceSolution.UsersService/eCommerce.API/eCommerce.API.csproj --configuration Release --verbosity minimal
+
+      - name: Build ProductsService
+        run: dotnet build Product/eCommerceSolution.ProductsService/ProductsMicroService.API/ProductsMicroService.API.csproj --configuration Release --verbosity minimal
+
+      - name: Build OrdersService
+        run: dotnet build Order/eCommerceSolution.OrdersService/API/API.csproj --configuration Release --verbosity minimal
+
+      - name: Build ApiGateway
+        run: dotnet build Gateway/eCommerceSolution.ApiGateway/ApiGateway.csproj --configuration Release --verbosity minimal
