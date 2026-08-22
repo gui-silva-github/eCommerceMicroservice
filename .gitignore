@@ -1,1 +1,44 @@
+# Secrets / env
 .env
+.env.local
+*.pfx
+*.snk
+
+# .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+project.lock.json
+project.fragment.lock.json
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+*.rsuser
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / test
+*.log
+TestResult.xml
+coverage/
+coverage*.json
+coverage*.xml
+
+# Docker leftover
+*.pid

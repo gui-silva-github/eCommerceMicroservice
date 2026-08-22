@@ -1,0 +1,10 @@
+# Ignore build artifacts and IDE files
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/node_modules
+**/.angular
+**/*.*proj.user
+.env
