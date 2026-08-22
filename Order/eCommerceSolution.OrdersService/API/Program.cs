@@ -8,6 +8,11 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDataAccessLayer(builder.Configuration);
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+    options.InstanceName = "Orders_";
+});
 builder.Services.AddBusinessLogicLayer(builder.Configuration);
 
 builder.Services.AddControllers()
