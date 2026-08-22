@@ -1,6 +1,8 @@
 # e-Commerce Microservices
 
-Solução de e-commerce distribuída com **3 microserviços .NET 8**, frontend **Angular 21** e persistência poliglota (PostgreSQL, MySQL e MongoDB). Cada serviço possui banco de dados próprio, deploy independente e responsabilidade de domínio bem definida.
+Solução de e-commerce distribuída com **3 microserviços .NET 8**, **API Gateway (Ocelot)**, **Redis**, frontend **Angular 21** e persistência poliglota (PostgreSQL, MySQL e MongoDB). Cada serviço possui banco próprio, deploy independente e responsabilidade de domínio bem definida.
+
+O frontend fala **apenas com o gateway**. O OrdersService (dependant) chama Users e Products (dependencies) com **Polly** (retry, timeout, circuit breaker, bulkhead e fallback).
 
 ![Arquitetura dos microserviços](./docs/architecture-microservices.png)
 
@@ -8,12 +10,14 @@ Solução de e-commerce distribuída com **3 microserviços .NET 8**, frontend *
 
 ## Visão geral
 
-| Serviço | Domínio | Porta (HTTPS) | Banco | ORM / Acesso |
-|---------|---------|---------------|-------|--------------|
+| Serviço | Domínio | Porta | Banco / infra | Acesso |
+|---------|---------|-------|---------------|--------|
+| **ApiGateway (Ocelot)** | Roteamento, rate limit, file cache, QoS | `7010` | — | Upstream → Downstream |
 | **UsersService** | Autenticação (register/login) | `7186` | PostgreSQL | Dapper |
-| **ProductsService** | Catálogo de produtos (CRUD + busca) | `7187` | MySQL | Entity Framework Core |
-| **OrdersService** | Pedidos e itens (CRUD + buscas) | `7094` | MongoDB | MongoDB Driver |
-| **Frontend Angular** | UI SPA (catálogo, carrinho, pedidos) | `4200` | — | HttpClient |
+| **ProductsService** | Catálogo de produtos (CRUD + busca) | `7187` | MySQL + Redis | EF Core |
+| **OrdersService** | Pedidos e itens (CRUD + buscas) | `7094` | MongoDB + Redis | MongoDB Driver |
+| **Redis** | Cache distribuído (`IDistributedCache`) | `6379` | Redis | StackExchange.Redis |
+| **Frontend Angular** | UI SPA (catálogo, carrinho, pedidos) | `4200` | — | HttpClient → Gateway |
 
 ---
 
@@ -21,16 +25,17 @@ Solução de e-commerce distribuída com **3 microserviços .NET 8**, frontend *
 
 ```
 eCommerceMicroservice/
-├── User/eCommerceSolution.UsersService/       # Microserviço de usuários
-├── Product/eCommerceSolution.ProductsService/   # Microserviço de produtos
-├── Order/eCommerceSolution.OrdersService/       # Microserviço de pedidos
-├── microservice/                                # Frontend Angular
+├── Gateway/eCommerceSolution.ApiGateway/        # API Gateway (Ocelot + Polly QoS)
+├── User/eCommerceSolution.UsersService/         # Microserviço de usuários
+├── Product/eCommerceSolution.ProductsService/   # Microserviço de produtos + Redis
+├── Order/eCommerceSolution.OrdersService/       # Microserviço de pedidos + Polly + Redis
+├── microservice/                                # Frontend Angular (via gateway :7010)
 ├── docker/                                      # Scripts de init dos bancos
 ├── docker-compose.yml                           # Orquestração local
 ├── .env.example                                 # Variáveis de ambiente
 ├── docs/
-│   └── architecture-microservices.png           # Diagrama de arquitetura
-└── mysql/                                       # Script legado MySQL (referência)
+│   └── architecture-microservices.png
+└── .github/workflows/ci.yml                     # Build .NET 8 no GitHub Actions
 ```
 
 ---
@@ -40,22 +45,26 @@ eCommerceMicroservice/
 Todos os microserviços seguem **arquitetura em 3 camadas** com inversão de dependência:
 
 ```
-Cliente HTTP
-    → API (Controllers / Minimal APIs)
-        → Service Layer (regras de negócio)
-            → Repository (abstração de dados)
-                → Banco de dados
+Cliente HTTP (Angular)
+    → API Gateway (Ocelot)
+        → API (Controllers / Minimal APIs)
+            → Service Layer (regras de negócio)
+                → Repository (abstração de dados)
+                    → Banco de dados
 ```
 
 ### Padrões utilizados
 
-- **Repository Pattern** — abstrai o acesso a dados
-- **Service Layer** — centraliza validação e regras de negócio
-- **DTOs** — contratos de API separados das entidades
-- **FluentValidation** — validação declarativa
-- **AutoMapper** — mapeamento Request → Entity → Response
-- **Exception Middleware** — respostas de erro padronizadas (`ApiErrorResponse`)
-- **Dependency Injection** — extensões `AddDataAccessLayer()` / `AddCore()` / `AddBusinessLogicLayer()`
+- **API Gateway** - Ocelot (Upstream/Downstream, rate limit, file cache, QoS)
+- **Fault tolerance** - Polly no HttpClientFactory (dependant → dependency)
+- **Distributed cache** - Redis via `IDistributedCache` + StackExchange.Redis
+- **Repository Pattern** - abstrai o acesso a dados
+- **Service Layer** - centraliza validação e regras de negócio
+- **DTOs** - contratos de API separados das entidades (`FaultDTO` no fallback)
+- **FluentValidation** - validação declarativa
+- **AutoMapper** - mapeamento Request → Entity → Response
+- **Exception Middleware** - respostas de erro padronizadas (`ApiErrorResponse`)
+- **Dependency Injection** - extensões `AddDataAccessLayer()` / `AddCore()` / `AddBusinessLogicLayer()`
 
 ---
 
@@ -79,8 +88,8 @@ eCommerce.Infrastructure → Dapper, PostgreSQL
 
 ```
 ProductsMicroService.API
-BusinessLogicLayer
-DataAccessLayer          → EF Core, MySQL
+BusinessLogicLayer      → cache-aside Redis (`IDistributedCache`)
+DataAccessLayer         → EF Core, MySQL
 ```
 
 | Método | Endpoint |
@@ -92,12 +101,14 @@ DataAccessLayer          → EF Core, MySQL
 | `PUT` | `/api/products` |
 | `DELETE` | `/api/products/{id}` |
 
+Cache Redis: chave `$"{id}"` (com `InstanceName = Products_`) e `"all"` para o catálogo. TTL 60s. Invalidação em create/update/delete. Se o Redis cair, a leitura vai ao MySQL.
+
 ### OrdersService
 
 ```
 API
-BusinessLogicLayer
-DataAccessLayer          → MongoDB Driver
+BusinessLogicLayer      → Polly + HttpClientFactory + cache-aside Redis
+DataAccessLayer         → MongoDB Driver
 ```
 
 | Método | Endpoint |
@@ -111,14 +122,51 @@ DataAccessLayer          → MongoDB Driver
 | `PUT` | `/api/Orders/{id}` |
 | `DELETE` | `/api/Orders/{id}` |
 
+**Dependant:** OrdersService. **Dependencies:** UsersService e ProductsService.
+
+Políticas Polly combinadas (`Policy.WrapAsync`), registradas com `AddPolicyHandler` no typed `HttpClient`:
+
+| Política | O que faz |
+|----------|-----------|
+| **Wait and Retry** | 3 tentativas, exponential backoff (200ms, 400ms, 800ms) em erros *transient* |
+| **Timeout** | 3s por tentativa (async / pessimistic) |
+| **CircuitBreaker** | abre após 3 falhas; *duration of break* 15s |
+| **Bulkhead Isolation** | `MaxParallelization = 5`, `MaxQueuingActions = 10` |
+| **Fallback** | devolve `FaultDTO` + header `X-Fallback: true` (HTTP 503) |
+
+### API Gateway (Ocelot)
+
+Ponto único para o frontend. Configuração em `ocelot.json` / `ocelot.docker.json`.
+
+```csharp
+builder.Services.AddOcelot().AddPolly();
+await app.UseOcelot();
+```
+
+| Conceito | Onde |
+|----------|------|
+| Upstream / Downstream | cada rota em `ocelot.json` |
+| `RateLimitOptions` | limite por rota (ex.: 5 GET/s em produtos) |
+| `ClientWhitelist` + `ClientIdHeader` | `ClientId: admin-client` ignora o limite |
+| `FileCacheOptions` (`TtlSeconds`, `Region`) | cache GET de produtos/users no gateway (15–20s) |
+| `QoSOptions` | timeout + circuit breaker Polly no gateway |
+
+Health check: `GET http://localhost:7010/health`
+
 ---
 
 ## Frontend Angular
 
-SPA em **Angular 21** com **Angular Material**, consumindo os três microserviços:
+SPA em **Angular 21** com **Angular Material**. Todas as URLs apontam para o **gateway**:
 
-| Funcionalidade | Rota | Microserviço |
-|----------------|------|--------------|
+```typescript
+apiUrl: 'http://localhost:7010/api/Auth/'
+productsMicroserviceUrl: 'http://localhost:7010/api/products'
+ordersMicroserviceUrl: 'http://localhost:7010/api/Orders'
+```
+
+| Funcionalidade | Rota | Downstream |
+|----------------|------|------------|
 | Login / Cadastro | `/auth/login`, `/auth/register` | Users |
 | Catálogo e busca | `/products/showcase`, `/products/search/:str` | Products |
 | Admin produtos | `/admin/products` | Products |
@@ -127,13 +175,7 @@ SPA em **Angular 21** com **Angular Material**, consumindo os três microserviç
 | Meus pedidos | `/orders` | Orders |
 | Admin pedidos | `/admin/orders` | Orders |
 
-Configuração em `microservice/src/environment.ts`:
-
-```typescript
-apiUrl: 'https://localhost:7186/api/Auth/'
-productsMicroserviceUrl: 'https://localhost:7187/api/products'
-ordersMicroserviceUrl: 'https://localhost:7094/api/Orders'
-```
+Swagger continua nas portas diretas dos microserviços (não passa pelo gateway).
 
 ---
 
@@ -141,56 +183,35 @@ ordersMicroserviceUrl: 'https://localhost:7094/api/Orders'
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download)
 - [Node.js 20+](https://nodejs.org/) (frontend)
-- [MySQL](https://www.mysql.com/) (Products)
-- [PostgreSQL](https://www.postgresql.org/) (Users)
-- [MongoDB](https://www.mongodb.com/) (Orders)
-- Certificado de desenvolvimento HTTPS confiável (`dotnet dev-certs https --trust`)
-
-### Bancos via Docker (opcional)
-
-```bash
-docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=admin --name postgres postgres
-docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=admin --name mysql mysql:8
-docker run -d -p 27017:27017 --name mongodb mongo
-```
+- [Docker](https://www.docker.com/) (recomendado: bancos + Redis + stack completa)
+- Ou instalações locais: MySQL, PostgreSQL, MongoDB, Redis
+- Certificado de desenvolvimento HTTPS confiável (`dotnet dev-certs https --trust`) - só se for chamar as APIs em HTTPS direto
 
 ---
 
 ## Como executar
 
-### 1. UsersService
+### Stack completa (recomendado)
 
 ```bash
-dotnet run --project User/eCommerceSolution.UsersService/eCommerce.API/eCommerce.API.csproj
+cp .env.example .env
+docker compose up --build -d
 ```
 
-Swagger: `https://localhost:7186/swagger`
-
-### 2. ProductsService
+| Serviço | URL (HTTP) | Swagger / health |
+|---------|------------|------------------|
+| **Frontend Angular** | `http://localhost:4200` | — |
+| **API Gateway** | `http://localhost:7010` | `/health` |
+| UsersService | `http://localhost:7186` | `/swagger` |
+| ProductsService | `http://localhost:7187` | `/swagger` |
+| OrdersService | `http://localhost:7094` | `/swagger` |
+| Redis | `localhost:6379` | — |
 
 ```bash
-dotnet run --project Product/eCommerceSolution.ProductsService/ProductsMicroService.API/ProductsMicroService.API.csproj
+docker compose logs -f
+docker compose down          # volumes preservados
+docker compose down -v       # reset dos dados
 ```
-
-Swagger: `https://localhost:7187/swagger`
-
-### 3. OrdersService
-
-```bash
-dotnet run --project Order/eCommerceSolution.OrdersService/API/API.csproj
-```
-
-Swagger: `https://localhost:7094/swagger`
-
-### 4. Frontend Angular
-
-```bash
-cd microservice
-npm install
-npm start
-```
-
-Aplicação: `http://localhost:4200`
 
 ### Login admin (frontend)
 
@@ -199,34 +220,68 @@ Aplicação: `http://localhost:4200`
 | Email | `admin@gmail.com` |
 | Senha | `admin` |
 
+### Execução local (`dotnet run`)
+
+Suba pelo menos Redis (e os bancos):
+
+```bash
+docker compose up postgres mysql mongodb redis -d
+```
+
+```bash
+dotnet run --project User/eCommerceSolution.UsersService/eCommerce.API/eCommerce.API.csproj
+dotnet run --project Product/eCommerceSolution.ProductsService/ProductsMicroService.API/ProductsMicroService.API.csproj
+dotnet run --project Order/eCommerceSolution.OrdersService/API/API.csproj
+dotnet run --project Gateway/eCommerceSolution.ApiGateway/ApiGateway.csproj
+```
+
+O gateway local (`ocelot.json`) encaminha para as portas HTTP:
+
+| Downstream | Porta |
+|------------|-------|
+| Users | `5034` |
+| Products | `5035` |
+| Orders | `5194` |
+
+Frontend:
+
+```bash
+cd microservice
+npm install
+npm start
+```
+
+Aplicação: `http://localhost:4200` → gateway `http://localhost:7010`
+
 ---
 
 ## Fluxo de compra (cliente)
 
 ```
-1. Registro ou login        → UsersService
-2. Navegar catálogo         → ProductsService
+1. Registro ou login        → Gateway → UsersService
+2. Navegar catálogo         → Gateway → ProductsService (file cache + Redis)
 3. Adicionar ao carrinho    → CartService (localStorage)
-4. Finalizar pedido         → OrdersService (POST /api/Orders)
-5. Ver histórico            → OrdersService (GET /search/userid/{id})
+4. Finalizar pedido         → Gateway → OrdersService (POST /api/Orders)
+5. Ver histórico            → Gateway → OrdersService (GET /search/userid/{id})
 ```
 
-O pedido referencia `UserID` e `ProductID` **sem foreign keys entre bancos** — princípio *database per service* dos microserviços.
+O pedido referencia `UserID` e `ProductID` **sem foreign keys entre bancos** — princípio *database per service*.
 
 ---
 
 ## Comunicação entre serviços
 
-Comunicação **síncrona** via `HttpClient` no OrdersService:
+Comunicação **síncrona** via typed `HttpClient` + **Polly** no OrdersService (não passa pelo gateway):
 
-| De | Para | Endpoint | Uso |
-|----|------|----------|-----|
+| De (dependant) | Para (dependency) | Endpoint | Uso |
+|----------------|-------------------|----------|-----|
 | Orders | Users | `GET /api/Users/{userID}` | Validar UserID + enriquecer `PersonName` / `Email` |
 | Orders | Products | `GET /api/products/search/product-id/{productID}` | Validar ProductID + enriquecer `ProductName` / `Category` |
 
 ```mermaid
 flowchart TB
     Angular["Angular SPA<br/>:4200"]
+    Gateway["API Gateway Ocelot<br/>:7010"]
 
     Users["UsersService<br/>:7186"]
     Products["ProductsService<br/>:7187"]
@@ -235,70 +290,170 @@ flowchart TB
     PG[("PostgreSQL")]
     MySQL[("MySQL")]
     Mongo[("MongoDB")]
+    Redis[("Redis")]
 
-    Angular --> Users
-    Angular --> Products
-    Angular --> Orders
+    Angular --> Gateway
+    Gateway -->|"Upstream → Downstream"| Users
+    Gateway --> Products
+    Gateway --> Orders
 
     Users --> PG
     Products --> MySQL
+    Products --> Redis
     Orders --> Mongo
+    Orders --> Redis
 
-    Orders -->|"HttpClient GetUserByUserID"| Users
-    Orders -->|"HttpClient GetProductByProductID"| Products
+    Orders -->|"HttpClient + Polly"| Users
+    Orders -->|"HttpClient + Polly"| Products
 ```
 
 ---
 
-## Docker e Docker Compose
+## Como testar cada conceito
 
-Stack completa (Angular + 3 APIs + PostgreSQL + MySQL + MongoDB) via Compose, com **database per service**, health checks e configuração externalizada. O frontend roda `npm ci` + `ng build` no build da imagem e é servido pelo nginx.
+Com a stack no ar (`docker compose up -d`). Troque o `PRODUCT_ID` / `USER_ID` pelos valores reais do seed ou do Swagger.
 
-### Subir tudo
-
-```bash
-cp .env.example .env
-docker compose up --build -d
-```
-
-| Serviço | URL (HTTP) | Swagger |
-|---------|------------|---------|
-| **Frontend Angular** | `http://localhost:4200` | — |
-| UsersService | `http://localhost:7186` | `/swagger` |
-| ProductsService | `http://localhost:7187` | `/swagger` |
-| OrdersService | `http://localhost:7094` | `/swagger` |
+### 1. Gateway - Upstream / Downstream
 
 ```bash
-# logs
-docker compose logs -f
-
-# parar e remover containers (volumes preservados)
-docker compose down
-
-# reset completo dos dados
-docker compose down -v
+curl -i http://localhost:7010/health
+curl -i http://localhost:7010/api/products
 ```
 
-### Estrutura Docker
+O path **upstream** (`/api/products`) é o que o frontend chama. O Ocelot encaminha **downstream** para `products-api:8080`. Compare com a chamada direta: `curl -i http://localhost:7187/api/products`.
 
-```
-docker-compose.yml
-.env.example
-docker/
-├── postgres/init/01-users.sql      # schema Users + seed admin
-└── mysql/init/01-products.sql      # schema Products + seed catálogo
-microservice/
-├── Dockerfile                      # npm ci + ng build → nginx
-└── docker/nginx.conf               # SPA fallback
-```
+### 2. Rate limit (`RateLimitOptions`)
 
-Cada API e o frontend possuem `Dockerfile` multi-stage. Exemplo manual (Orders):
+O GET de produtos aceita **5 req/s**. A 6ª deve responder **429**:
+
+Headers úteis: `X-Rate-Limit-Limit`, `Retry-After`.
+
+### 3. Client whitelist (`ClientIdHeader`)
+
+O cliente `admin-client` **não** é limitado:
+
+Todos devem ser `200`. Sem o header, o limite volta a valer (identificação por IP).
+
+### 4. File cache no gateway (`FileCacheOptions`, `TtlSeconds`, `Region`)
+
+1. `GET http://localhost:7010/api/products` (cacheia 15s na região `products`)
+2. Altere um produto **direto** no ProductsService (`PUT http://localhost:7187/api/products`)
+3. `GET` de novo pelo **gateway** - ainda vê o valor antigo até o TTL
+4. `GET` direto em `:7187` - já vê o valor novo
+5. Após ~15s o gateway atualiza
+
+### 5. Redis (`IDistributedCache` + StackExchange.Redis)
+
+No ProductsService, a 1ª leitura vai ao MySQL; a 2ª usa Redis (`cacheKey = $"{id}"`).
 
 ```bash
-docker build -t orders-service -f Order/eCommerceSolution.OrdersService/API/Dockerfile Order/eCommerceSolution.OrdersService
+# 1ª vez: miss → MySQL → SetString
+curl -s http://localhost:7187/api/products | head -c 200; echo
+
+# 2ª vez: hit no Redis (logs do products-api)
+curl -s http://localhost:7187/api/products | head -c 200; echo
+
+docker compose logs products-api --tail=30
+redis-cli KEYS 'Products_*'
 ```
 
-> **Nota:** as APIs no Docker usam **HTTP**. O `environment.ts` já aponta para `http://localhost:7186|7187|7094` — o browser chama as APIs no host (não pelos nomes dos containers).
+Update/delete invalidam `"all"` e `$"{id}"`. Se o Redis cair, o serviço continua pelo banco:
+
+```bash
+docker compose stop redis
+curl -i http://localhost:7187/api/products
+docker compose start redis
+```
+
+O OrdersService também faz cache-aside de `UserDTO` / `ProductDTO` nas chamadas HTTP.
+
+### 6. Polly - Wait and Retry + Timeout (erros transient)
+
+```bash
+docker compose stop products-api
+```
+
+Liste um pedido (o Orders enriquece itens chamando Products):
+
+```bash
+curl -i http://localhost:7094/api/Orders
+docker compose logs orders-api --tail=50
+```
+
+Procure `[Polly][ProductsService] WaitAndRetry #1/2/3` (exponential backoff). Depois o **Fallback** com `FaultDTO`. O pedido ainda retorna; o enriquecimento de produto fica vazio.
+
+### 7. CircuitBreaker (`Duration of Break`)
+
+Com o Products parado, repita a listagem de pedidos **várias vezes** (3 falhas abrem o circuito):
+
+```bash
+for i in $(seq 1 6); do curl -s -o /dev/null http://localhost:7094/api/Orders; done
+docker compose logs orders-api --tail=80
+```
+
+Procure `CircuitBreaker ABERTO por 15s`. Nesse intervalo as chamadas caem direto no fallback (sem retry). Após 15s: `MEIO-ABERTO` (probe). Suba de novo:
+
+```bash
+docker compose start products-api
+```
+
+Espere o health do container e chame de novo — `CircuitBreaker FECHADO`.
+
+### 8. Fallback + Fault DTO
+
+Com a dependency fora, o handler Polly devolve HTTP 503 + `X-Fallback: true` + JSON `FaultDTO`:
+
+```json
+{
+  "dependant": "OrdersService",
+  "dependency": "ProductsService",
+  "message": "ProductsService indisponível. Fallback Polly acionado.",
+  "faultType": "BrokenCircuitException",
+  "usedFallback": true
+}
+```
+
+O typed client transforma isso em `ExternalServiceUnavailableException` (HTTP 503 no Orders, se a falha não for só no enriquecimento).
+
+### 9. Bulkhead (`MaxParallelization`, `MaxQueuingActions`)
+
+Mais difícil de ver no uso manual. Com 5 chamadas em paralelo e fila de 10, a 16ª é rejeitada (`BulkheadRejectedException` → fallback). Dá para forçar com vários `curl` em background enquanto o Products está lento/parado (retries ocupam o bulkhead):
+
+```bash
+docker compose stop products-api
+for i in $(seq 1 20); do curl -s -o /dev/null http://localhost:7094/api/Orders & done
+wait
+docker compose logs orders-api --tail=100 | grep Bulkhead
+docker compose start products-api
+```
+
+### 10. QoS no gateway (Ocelot + Polly)
+
+Com o Products parado, o **gateway** também abre o circuito da rota:
+
+```bash
+docker compose stop products-api
+docker compose logs api-gateway --tail=40
+docker compose start products-api
+```
+
+`QoSOptions.TimeoutValue` está em **milissegundos** (10000 = 10s). `DurationOfBreak` também (5000 = 5s).
+
+### 11. Combined policies
+
+A ordem (outer → inner) no Orders é:
+
+`Fallback → CircuitBreaker → WaitAndRetry → Bulkhead → Timeout`
+
+Ou seja: cada tentativa tem timeout; o bulkhead limita concorrência; retries só acontecem com o circuito fechado; se tudo falhar, o fallback devolve `FaultDTO`.
+
+### 12. Frontend ponta a ponta
+
+1. Abra `http://localhost:4200`
+2. Login `admin@gmail.com` / `admin`
+3. Catálogo (gateway + cache)
+4. Carrinho → checkout (Orders → Polly → Users/Products)
+5. DevTools → Network: todas as APIs em `localhost:7010`
 
 ---
 
@@ -307,13 +462,17 @@ docker build -t orders-service -f Order/eCommerceSolution.OrdersService/API/Dock
 | Tópico | Onde praticar |
 |--------|---------------|
 | Microserviços e bounded contexts | 3 serviços independentes |
+| API Gateway (Ocelot) | Upstream/Downstream, um único host para o frontend |
+| Rate limiting | `RateLimitOptions`, whitelist, `ClientIdHeader` |
+| File cache no gateway | `FileCacheOptions` / `TtlSeconds` / `Region` |
+| Fault tolerance (dependant / dependency) | Orders → Users / Products |
+| Polly (retry, timeout, circuit breaker, bulkhead, fallback) | `HttpClientFactory` + `AddPolicyHandler` |
+| Combined / async policies | `Policy.WrapAsync` |
+| Transient faults + exponential backoff | WaitAndRetry |
+| Fault DTO | fallback Polly |
+| Distributed cache (Redis) | `IDistributedCache` + StackExchange.Redis |
 | Database per service | PostgreSQL + MySQL + MongoDB |
 | Arquitetura em camadas | API / BLL / DAL em cada serviço |
-| Polyglot persistence | Banco certo para cada domínio |
-| Validação e mapeamento | FluentValidation + AutoMapper |
-| API REST + Swagger | Todos os serviços |
-| SPA multi-backend | Angular com 3 URLs |
-| Carrinho e checkout | Fluxo e-commerce completo |
-| Comunicação síncrona (HttpClient) | Orders → Users / Products |
+| SPA multi-backend via gateway | Angular em `:4200` → `:7010` |
 
---- 
+---
