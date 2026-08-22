@@ -1,5 +1,7 @@
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.DTO;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.Exceptions;
+using eCommerce.OrdersMicroservice.BusinessLogicLayer.Policies;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Http.Json;
@@ -17,20 +19,43 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.HttpClients
         };
 
         private readonly HttpClient _httpClient;
+        private readonly IDistributedCache _distributedCache;
         private readonly ILogger<ProductsMicroserviceClient> _logger;
+        private readonly ResilienceOptions _resilienceOptions;
 
-        public ProductsMicroserviceClient(HttpClient httpClient, ILogger<ProductsMicroserviceClient> logger)
+        public ProductsMicroserviceClient(
+            HttpClient httpClient,
+            IDistributedCache distributedCache,
+            ILogger<ProductsMicroserviceClient> logger,
+            ResilienceOptions resilienceOptions)
         {
             _httpClient = httpClient;
+            _distributedCache = distributedCache;
             _logger = logger;
+            _resilienceOptions = resilienceOptions;
         }
 
         public async Task<ProductDTO?> GetProductByProductID(Guid productID)
         {
+            string cacheKey = $"{productID}";
+            ProductDTO? cached = await TryGetCacheAsync<ProductDTO>(cacheKey);
+            if (cached != null)
+            {
+                return cached;
+            }
+
             try
             {
                 HttpResponseMessage response = await _httpClient.GetAsync(
                     $"/api/products/search/product-id/{productID}");
+
+                if (response.Headers.Contains(ResiliencePolicies.FallbackHeader))
+                {
+                    FaultDTO? fault = await response.Content.ReadFromJsonAsync<FaultDTO>(JsonOptions);
+                    _logger.LogWarning("Fallback Polly ao buscar produto {ProductID}: {@Fault}", productID, fault);
+                    throw new ExternalServiceUnavailableException(
+                        fault?.Message ?? "ProductsService indisponível (fallback).");
+                }
 
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
@@ -55,12 +80,15 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.HttpClients
 
                 JsonElement root = document.RootElement;
 
-                return new ProductDTO(
+                ProductDTO product = new(
                     RootGuid(root, "productID", "ProductID"),
                     RootString(root, "productName", "ProductName"),
                     RootString(root, "category", "Category"),
                     RootDouble(root, "unitPrice", "UnitPrice"),
                     RootInt(root, "quantityInStock", "QuantityInStock"));
+
+                await TrySetCacheAsync(cacheKey, product);
+                return product;
             }
             catch (ExternalServiceUnavailableException)
             {
@@ -79,6 +107,44 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.HttpClients
                 throw new ExternalServiceUnavailableException(
                     "Timeout ao conectar ao ProductsService.",
                     ex);
+            }
+        }
+
+        private async Task<T?> TryGetCacheAsync<T>(string cacheKey)
+        {
+            try
+            {
+                string? cachedEntity = await _distributedCache.GetStringAsync(cacheKey);
+                if (!string.IsNullOrWhiteSpace(cachedEntity))
+                {
+                    return JsonSerializer.Deserialize<T>(cachedEntity, JsonOptions);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Redis indisponível ao ler a chave {CacheKey}.", cacheKey);
+            }
+
+            return default;
+        }
+
+        private async Task TrySetCacheAsync<T>(string cacheKey, T value)
+        {
+            try
+            {
+                DistributedCacheEntryOptions options = new()
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(_resilienceOptions.CacheSeconds)
+                };
+
+                await _distributedCache.SetStringAsync(
+                    cacheKey,
+                    JsonSerializer.Serialize(value, JsonOptions),
+                    options);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Redis indisponível ao gravar a chave {CacheKey}.", cacheKey);
             }
         }
 
