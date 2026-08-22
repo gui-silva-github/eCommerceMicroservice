@@ -1,11 +1,13 @@
 ﻿using eCommerce.OrdersMicroservice.BusinessLogicLayer.HttpClients;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.Mappers;
+using eCommerce.OrdersMicroservice.BusinessLogicLayer.Policies;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.ServiceContracts;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.Services;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.Validators;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Polly;
 
 namespace eCommerce.OrdersMicroservice.BusinessLogicLayer
 {
@@ -27,29 +29,42 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer
             string productsBaseUrl = configuration["ProductsMicroserviceBaseUrl"]
                 ?? throw new InvalidOperationException("ProductsMicroserviceBaseUrl não configurada.");
 
-            // Comunicação síncrona entre microserviços via typed HttpClient.
-            // Aceita certificado de desenvolvimento do localhost (dotnet dev-certs).
+            ResilienceOptions resilienceOptions = configuration
+                .GetSection(ResilienceOptions.SectionName)
+                .Get<ResilienceOptions>() ?? new ResilienceOptions();
+
+            services.AddSingleton(resilienceOptions);
+
+            IAsyncPolicy<HttpResponseMessage> usersPolicy =
+                ResiliencePolicies.CreateCombinedPolicy("UsersService", resilienceOptions);
+            IAsyncPolicy<HttpResponseMessage> productsPolicy =
+                ResiliencePolicies.CreateCombinedPolicy("ProductsService", resilienceOptions);
+
+            // Dependant (Orders) → Dependency (Users / Products).
+            // HttpClientFactory + AddPolicyHandler (WaitAndRetry, Timeout, CircuitBreaker, Bulkhead, Fallback).
             services.AddHttpClient<IUsersMicroserviceClient, UsersMicroserviceClient>(client =>
             {
                 client.BaseAddress = new Uri(usersBaseUrl.TrimEnd('/') + "/");
-                client.Timeout = TimeSpan.FromSeconds(10);
+                client.Timeout = TimeSpan.FromMinutes(2);
             })
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
             {
                 ServerCertificateCustomValidationCallback =
                     HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-            });
+            })
+            .AddPolicyHandler(usersPolicy);
 
             services.AddHttpClient<IProductsMicroserviceClient, ProductsMicroserviceClient>(client =>
             {
                 client.BaseAddress = new Uri(productsBaseUrl.TrimEnd('/') + "/");
-                client.Timeout = TimeSpan.FromSeconds(10);
+                client.Timeout = TimeSpan.FromMinutes(2);
             })
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
             {
                 ServerCertificateCustomValidationCallback =
                     HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-            });
+            })
+            .AddPolicyHandler(productsPolicy);
 
             services.AddScoped<IOrdersService, OrdersService>();
 
