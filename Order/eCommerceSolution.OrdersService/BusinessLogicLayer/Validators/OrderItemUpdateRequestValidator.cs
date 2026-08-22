@@ -14,7 +14,7 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Validators
 
             RuleFor(temp => temp.ProductID)
                 .NotEmpty().WithMessage("Produto ID não pode ser vazio")
-                .MustAsync(ProductExistsAsync).WithMessage("Produto ID inválido — produto não encontrado no ProductsService.");
+                .MustAsync(ProductExistsAsync).WithMessage("Produto ID inválido: produto não encontrado no ProductsService.");
 
             RuleFor(temp => temp.UnitPrice)
                 .NotEmpty().WithMessage("Preço Unitário não pode ser vazio")

@@ -12,6 +12,8 @@ namespace eCommerce.BusinessLogicLayer.ServiceContracts
 
         Task<ProductResponse?> GetProductByCondition(Expression<Func<Product, bool>> conditionExpression);
 
+        Task<ProductResponse?> GetProductByProductID(Guid productID);
+
         Task<ProductResponse?> AddProduct(ProductAddRequest productAddRequest);
 
         Task<ProductResponse?> UpdateProduct(ProductUpdateRequest productUpdateRequest);

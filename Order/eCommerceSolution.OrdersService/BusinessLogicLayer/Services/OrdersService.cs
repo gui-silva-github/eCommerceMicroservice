@@ -175,7 +175,7 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Services
 
         /// <summary>
         /// Enriquece o pedido com dados do UsersService e ProductsService via HttpClient (comunicação síncrona).
-        /// Falhas externas não bloqueiam a leitura — mantém IDs e deixa campos enriquecidos nulos.
+        /// Falhas externas não bloqueiam a leitura; mantém IDs e deixa campos enriquecidos nulos.
         /// </summary>
         private async Task<OrderResponse> EnrichOrderResponseAsync(OrderResponse orderResponse)
         {

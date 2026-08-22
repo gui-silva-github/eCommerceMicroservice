@@ -17,7 +17,7 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer.Validators
 
             RuleFor(temp => temp.UserID)
                 .NotEmpty().WithMessage("User ID não pode ser vazio")
-                .MustAsync(UserExistsAsync).WithMessage("User ID inválido — usuário não encontrado no UsersService.");
+                .MustAsync(UserExistsAsync).WithMessage("User ID inválido: usuário não encontrado no UsersService.");
 
             RuleFor(temp => temp.OrderDate)
                 .NotEmpty().WithMessage("Data do Pedido não pode ser vazia");
