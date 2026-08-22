@@ -1,5 +1,5 @@
 # =============================================================================
-# e-Commerce Microservices — Docker Compose
+# e-Commerce Microservices: Docker Compose
 # =============================================================================
 # Princípios aplicados:
 #   - Database per service (PostgreSQL / MySQL / MongoDB)
@@ -21,7 +21,7 @@ name: ecommerce-microservices
 
 services:
   # ---------------------------------------------------------------------------
-  # Infraestrutura — bancos (database per service) + cache distribuído
+  # Infraestrutura: bancos (database per service) + cache distribuído
   # ---------------------------------------------------------------------------
 
   postgres:
@@ -109,7 +109,7 @@ services:
       start_period: 10s
 
   # ---------------------------------------------------------------------------
-  # Aplicações — microserviços .NET 8
+  # Aplicações: microserviços .NET 8
   # ---------------------------------------------------------------------------
 
   users-api:
@@ -205,7 +205,7 @@ services:
       - orders-api
 
   # ---------------------------------------------------------------------------
-  # Frontend — Angular SPA (npm ci + ng build → nginx)
+  # Frontend: Angular SPA (npm ci + ng build → nginx)
   # O browser chama as APIs via API Gateway (environment.ts → :7010)
   # ---------------------------------------------------------------------------
 

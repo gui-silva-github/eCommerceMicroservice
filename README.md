@@ -12,12 +12,12 @@ O frontend fala **apenas com o gateway**. O OrdersService (dependant) chama User
 
 | Serviço | Domínio | Porta | Banco / infra | Acesso |
 |---------|---------|-------|---------------|--------|
-| **ApiGateway (Ocelot)** | Roteamento, rate limit, file cache, QoS | `7010` | — | Upstream → Downstream |
+| **ApiGateway (Ocelot)** | Roteamento, rate limit, file cache, QoS | `7010` | - | Upstream → Downstream |
 | **UsersService** | Autenticação (register/login) | `7186` | PostgreSQL | Dapper |
 | **ProductsService** | Catálogo de produtos (CRUD + busca) | `7187` | MySQL + Redis | EF Core |
 | **OrdersService** | Pedidos e itens (CRUD + buscas) | `7094` | MongoDB + Redis | MongoDB Driver |
 | **Redis** | Cache distribuído (`IDistributedCache`) | `6379` | Redis | StackExchange.Redis |
-| **Frontend Angular** | UI SPA (catálogo, carrinho, pedidos) | `4200` | — | HttpClient → Gateway |
+| **Frontend Angular** | UI SPA (catálogo, carrinho, pedidos) | `4200` | - | HttpClient → Gateway |
 
 ---
 
@@ -148,7 +148,7 @@ await app.UseOcelot();
 | Upstream / Downstream | cada rota em `ocelot.json` |
 | `RateLimitOptions` | limite por rota (ex.: 5 GET/s em produtos) |
 | `ClientWhitelist` + `ClientIdHeader` | `ClientId: admin-client` ignora o limite |
-| `FileCacheOptions` (`TtlSeconds`, `Region`) | cache GET de produtos/users no gateway (15–20s) |
+| `FileCacheOptions` (`TtlSeconds`, `Region`) | cache GET de produtos/users no gateway (15 a 20s) |
 | `QoSOptions` | timeout + circuit breaker Polly no gateway |
 
 Health check: `GET http://localhost:7010/health`
@@ -200,12 +200,12 @@ docker compose up --build -d
 
 | Serviço | URL (HTTP) | Swagger / health |
 |---------|------------|------------------|
-| **Frontend Angular** | `http://localhost:4200` | — |
+| **Frontend Angular** | `http://localhost:4200` | - |
 | **API Gateway** | `http://localhost:7010` | `/health` |
 | UsersService | `http://localhost:7186` | `/swagger` |
 | ProductsService | `http://localhost:7187` | `/swagger` |
 | OrdersService | `http://localhost:7094` | `/swagger` |
-| Redis | `localhost:6379` | — |
+| Redis | `localhost:6379` | - |
 
 ```bash
 docker compose logs -f
@@ -265,7 +265,7 @@ Aplicação: `http://localhost:4200` → gateway `http://localhost:7010`
 5. Ver histórico            → Gateway → OrdersService (GET /search/userid/{id})
 ```
 
-O pedido referencia `UserID` e `ProductID` **sem foreign keys entre bancos** — princípio *database per service*.
+O pedido referencia `UserID` e `ProductID` **sem foreign keys entre bancos** (princípio *database per service*).
 
 ---
 
@@ -397,7 +397,7 @@ Procure `CircuitBreaker ABERTO por 15s`. Nesse intervalo as chamadas caem direto
 docker compose start products-api
 ```
 
-Espere o health do container e chame de novo — `CircuitBreaker FECHADO`.
+Espere o health do container e chame de novo: `CircuitBreaker FECHADO`.
 
 ### 8. Fallback + Fault DTO
 

@@ -1,4 +1,4 @@
-# Angular SPA — multi-stage: build (npm) → serve (nginx)
+# Angular SPA: multi-stage: build (npm) → serve (nginx)
 FROM node:22-alpine AS build
 WORKDIR /app
 

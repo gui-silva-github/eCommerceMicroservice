@@ -62,7 +62,7 @@
               <mat-icon aria-hidden="true">inventory_2</mat-icon>
               {{ order.orderItems.length }} item(ns)
               @if (order.orderItems[0]?.productName) {
-                — {{ order.orderItems[0].productName }}
+                - {{ order.orderItems[0].productName }}
                 @if (order.orderItems.length > 1) {
                   +{{ order.orderItems.length - 1 }}
                 }
