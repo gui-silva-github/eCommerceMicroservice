@@ -1,10 +1,10 @@
 # e-Commerce Microservices
 
-Solução de e-commerce distribuída com **3 microserviços .NET 8**, **API Gateway (Ocelot)**, **Redis**, frontend **Angular 21** e persistência poliglota (PostgreSQL, MySQL e MongoDB). Cada serviço possui banco próprio, deploy independente e responsabilidade de domínio bem definida.
+Solução de e-commerce distribuída com **3 microserviços .NET 8**, **API Gateway (Ocelot)**, **Redis**, **RabbitMQ**, frontend **Angular 21** e persistência poliglota (PostgreSQL, MySQL e MongoDB). Cada serviço possui banco próprio, deploy independente e responsabilidade de domínio bem definida.
 
-O frontend fala **apenas com o gateway**. O OrdersService (dependant) chama Users e Products (dependencies) com **Polly** (retry, timeout, circuit breaker, bulkhead e fallback).
+O frontend fala **apenas com o gateway** (`:7010`). O **OrdersService** (dependant) chama **Users** e **Products** (dependencies) de forma **síncrona** via `HttpClient` + **Polly**, e mantém cache local sincronizado de forma **assíncrona** via **RabbitMQ**.
 
-![Arquitetura dos microserviços](./docs/architecture-microservices.png)
+![Visão geral do projeto: arquitetura final](./docs/final-project.png)
 
 ---
 
@@ -17,6 +17,7 @@ O frontend fala **apenas com o gateway**. O OrdersService (dependant) chama User
 | **ProductsService** | Catálogo de produtos (CRUD + busca) | `7187` | MySQL + Redis | EF Core |
 | **OrdersService** | Pedidos e itens (CRUD + buscas) | `7094` | MongoDB + Redis | MongoDB Driver |
 | **Redis** | Cache distribuído (`IDistributedCache`) | `6379` | Redis | StackExchange.Redis |
+| **RabbitMQ** | Eventos de integração (cache sync) | `5672` / `15672` | RabbitMQ | `RabbitMQ.Client` |
 | **Frontend Angular** | UI SPA (catálogo, carrinho, pedidos) | `4200` | - | HttpClient → Gateway |
 
 ---
@@ -34,7 +35,8 @@ eCommerceMicroservice/
 ├── docker-compose.yml                           # Orquestração local
 ├── .env.example                                 # Variáveis de ambiente
 ├── docs/
-│   └── architecture-microservices.png
+│   ├── final-project.png                        # Diagrama de arquitetura (visão geral)
+│   └── architecture-microservices.png           # Diagrama complementar
 └── .github/workflows/ci.yml                     # Build .NET 8 no GitHub Actions
 ```
 
@@ -58,6 +60,7 @@ Cliente HTTP (Angular)
 - **API Gateway** - Ocelot (Upstream/Downstream, rate limit, file cache, QoS)
 - **Fault tolerance** - Polly no HttpClientFactory (dependant → dependency)
 - **Distributed cache** - Redis via `IDistributedCache` + StackExchange.Redis
+- **Async messaging** - RabbitMQ Topic Exchange (`product.*`) para sincronizar cache entre serviços
 - **Repository Pattern** - abstrai o acesso a dados
 - **Service Layer** - centraliza validação e regras de negócio
 - **DTOs** - contratos de API separados das entidades (`FaultDTO` no fallback)
@@ -165,6 +168,19 @@ productsMicroserviceUrl: 'http://localhost:7010/api/products'
 ordersMicroserviceUrl: 'http://localhost:7010/api/Orders'
 ```
 
+### Observer Pattern (Signals + RxJS)
+
+O estado da UI segue o padrão **Observer** com reatividade nativa do Angular:
+
+| Serviço | Papel | Mecanismo |
+|---------|-------|-----------|
+| `CartService` | Carrinho (localStorage) | `signal` + `computed` (`itemCount`, `totalAmount`, `feedbackMessage`) |
+| `ProductsService` | Catálogo em memória | `signal` + `computed` (`catalog`, `loading`, `error`, `hasProducts`) |
+| Componentes | Views | Observam signals no template (`cartService.itemCount()`, `productsService.catalog()`) |
+| HTTP | Chamadas à API | RxJS (`subscribe`, `tap`) |
+
+Adicionar produto ao carrinho na vitrine atualiza o badge na sidebar **sem refresh**. Navegar entre vitrine e admin **não refaz GET**: o catálogo permanece em memória até um CRUD invalidar.
+
 | Funcionalidade | Rota | Downstream |
 |----------------|------|------------|
 | Login / Cadastro | `/auth/login`, `/auth/register` | Users |
@@ -206,6 +222,7 @@ docker compose up --build -d
 | ProductsService | `http://localhost:7187` | `/swagger` |
 | OrdersService | `http://localhost:7094` | `/swagger` |
 | Redis | `localhost:6379` | - |
+| RabbitMQ (Management UI) | `http://localhost:15672` | `guest` / `guest` |
 
 ```bash
 docker compose logs -f
@@ -271,16 +288,40 @@ O pedido referencia `UserID` e `ProductID` **sem foreign keys entre bancos** (pr
 
 ## Comunicação entre serviços
 
-Comunicação **síncrona** via typed `HttpClient` + **Polly** no OrdersService (não passa pelo gateway):
+Dois caminhos para dados entre bounded contexts:
+
+| Quando | Como | Exemplo |
+|--------|------|---------|
+| Precisa da resposta **agora** | HTTP síncrono + Polly | Validar user/produto e enriquecer pedido |
+| Manter **cópia local atualizada** | RabbitMQ + Redis | Orders sincroniza cache após CRUD no Products |
+
+### Síncrona (HttpClient + Polly)
+
+Comunicação via typed `HttpClient` + **Polly** no OrdersService (não passa pelo gateway):
 
 | De (dependant) | Para (dependency) | Endpoint | Uso |
 |----------------|-------------------|----------|-----|
 | Orders | Users | `GET /api/Users/{userID}` | Validar UserID + enriquecer `PersonName` / `Email` |
 | Orders | Products | `GET /api/products/search/product-id/{productID}` | Validar ProductID + enriquecer `ProductName` / `Category` |
 
+### Assíncrona (RabbitMQ)
+
+Depois do commit no MySQL, o **ProductsService publica** um evento de integração. O **OrdersService consome em background** (`IHostedService`) e atualiza ou remove a chave no Redis local.
+
+| Peça | Valor |
+|------|-------|
+| Exchange | `ecommerce.products` (Topic, durable) |
+| Routing keys | `product.created` / `product.updated` / `product.deleted` |
+| Fila | `orders.product-cache` |
+| Binding | `product.*` |
+| Payload | JSON `ProductEventMessage` |
+| Ack | `autoAck: false` (`BasicAck` após gravar no Redis) |
+
+Se a publicação falhar, o CRUD HTTP **não quebra** (mesmo espírito de resiliência do Redis down).
+
 ```mermaid
 flowchart TB
-    Angular["Angular SPA<br/>:4200"]
+    Angular["Angular SPA<br/>:4200<br/>Signals + RxJS"]
     Gateway["API Gateway Ocelot<br/>:7010"]
 
     Users["UsersService<br/>:7186"]
@@ -291,6 +332,7 @@ flowchart TB
     MySQL[("MySQL")]
     Mongo[("MongoDB")]
     Redis[("Redis")]
+    RMQ["RabbitMQ<br/>Topic product.*"]
 
     Angular --> Gateway
     Gateway -->|"Upstream → Downstream"| Users
@@ -300,8 +342,10 @@ flowchart TB
     Users --> PG
     Products --> MySQL
     Products --> Redis
+    Products -->|"publish"| RMQ
     Orders --> Mongo
     Orders --> Redis
+    RMQ -->|"consume"| Orders
 
     Orders -->|"HttpClient + Polly"| Users
     Orders -->|"HttpClient + Polly"| Products
@@ -447,7 +491,18 @@ A ordem (outer → inner) no Orders é:
 
 Ou seja: cada tentativa tem timeout; o bulkhead limita concorrência; retries só acontecem com o circuito fechado; se tudo falhar, o fallback devolve `FaultDTO`.
 
-### 12. Frontend ponta a ponta
+### 12. RabbitMQ: sincronização de cache
+
+1. Abra a Management UI: `http://localhost:15672` (`guest` / `guest`)
+2. Confirme o exchange `ecommerce.products`, a fila `orders.product-cache` e o bind `product.*`
+3. Em um terminal: `docker compose logs -f products-api orders-api`
+4. Altere ou exclua um produto no Swagger `:7187`
+5. Nos logs: `Evento updated publicado...` (Products) e cache atualizado no Orders
+6. Verifique chaves Redis: `docker compose exec redis redis-cli KEYS 'Orders_*'`
+
+Laboratório guiado: `./scripts/lab.sh`
+
+### 13. Frontend ponta a ponta
 
 1. Abra `http://localhost:4200`
 2. Login `admin@gmail.com` / `admin`
@@ -471,6 +526,8 @@ Ou seja: cada tentativa tem timeout; o bulkhead limita concorrência; retries s�
 | Transient faults + exponential backoff | WaitAndRetry |
 | Fault DTO | fallback Polly |
 | Distributed cache (Redis) | `IDistributedCache` + StackExchange.Redis |
+| Async messaging (RabbitMQ) | Topic Exchange, `IHostedService` consumer, cache sync |
+| Observer Pattern (frontend) | Angular Signals + computed + RxJS |
 | Database per service | PostgreSQL + MySQL + MongoDB |
 | Arquitetura em camadas | API / BLL / DAL em cada serviço |
 | SPA multi-backend via gateway | Angular em `:4200` → `:7010` |
