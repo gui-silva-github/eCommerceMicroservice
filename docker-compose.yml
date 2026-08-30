@@ -5,6 +5,7 @@
 #   - Database per service (PostgreSQL / MySQL / MongoDB)
 #   - API Gateway (Ocelot) + Rate Limit + File Cache + QoS Polly
 #   - Distributed cache (Redis)
+#   - Mensageria assíncrona (RabbitMQ) - cache invalidation no Orders
 #   - Fault tolerance (Polly no Orders → Users / Products)
 #   - Configuração externalizada (.env)
 #   - Health checks + depends_on (startup ordenado)
@@ -21,7 +22,7 @@ name: ecommerce-microservices
 
 services:
   # ---------------------------------------------------------------------------
-  # Infraestrutura: bancos (database per service) + cache distribuído
+  # Infraestrutura: bancos (database per service) + cache + mensageria
   # ---------------------------------------------------------------------------
 
   postgres:
@@ -108,6 +109,27 @@ services:
       retries: 10
       start_period: 10s
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: ecommerce-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "${RABBITMQ_PORT}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT}:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
   # ---------------------------------------------------------------------------
   # Aplicações: microserviços .NET 8
   # ---------------------------------------------------------------------------
@@ -146,6 +168,10 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       ConnectionStrings__Redis: redis:6379
+      RabbitMQ__HostName: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__UserName: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASS}
     ports:
       - "${PRODUCTS_API_PORT}:8080"
     networks:
@@ -154,6 +180,8 @@ services:
       mysql:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   orders-api:
@@ -171,6 +199,10 @@ services:
       ConnectionStrings__Redis: redis:6379
       UsersMicroserviceBaseUrl: http://users-api:8080
       ProductsMicroserviceBaseUrl: http://products-api:8080
+      RabbitMQ__HostName: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__UserName: ${RABBITMQ_USER}
+      RabbitMQ__Password: ${RABBITMQ_PASS}
     ports:
       - "${ORDERS_API_PORT}:8080"
     networks:
@@ -179,6 +211,8 @@ services:
       mongodb:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       users-api:
         condition: service_started
@@ -237,3 +271,5 @@ volumes:
     name: ecommerce-mongodb-data
   redis_data:
     name: ecommerce-redis-data
+  rabbitmq_data:
+    name: ecommerce-rabbitmq-data

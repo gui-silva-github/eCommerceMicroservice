@@ -1,6 +1,7 @@
 ﻿using eCommerce.OrdersMicroservice.BusinessLogicLayer.HttpClients;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.Mappers;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.Policies;
+using eCommerce.OrdersMicroservice.BusinessLogicLayer.RabbitMQ;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.ServiceContracts;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.Services;
 using eCommerce.OrdersMicroservice.BusinessLogicLayer.Validators;
@@ -65,6 +66,13 @@ namespace eCommerce.OrdersMicroservice.BusinessLogicLayer
                     HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             })
             .AddPolicyHandler(productsPolicy);
+
+            RabbitMQOptions rabbitMQOptions = configuration
+                .GetSection(RabbitMQOptions.SectionName)
+                .Get<RabbitMQOptions>() ?? new RabbitMQOptions();
+
+            services.AddSingleton(rabbitMQOptions);
+            services.AddHostedService<RabbitMQProductConsumerHostedService>();
 
             services.AddScoped<IOrdersService, OrdersService>();
 

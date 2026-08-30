@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using eCommerce.BusinessLogicLayer.DTO;
 using eCommerce.BusinessLogicLayer.Exceptions;
+using eCommerce.BusinessLogicLayer.RabbitMQ;
 using eCommerce.BusinessLogicLayer.ServiceContracts;
 using eCommerce.DataAccessLayer.Entities;
 using eCommerce.DataAccessLayer.RepositoryContracts;
@@ -28,6 +29,7 @@ namespace eCommerce.BusinessLogicLayer.Services
         private readonly IMapper _mapper;
         private readonly IProductsRepository _productsRepository;
         private readonly IDistributedCache _distributedCache;
+        private readonly IRabbitMQPublisher _rabbitMQPublisher;
         private readonly ILogger<ProductsService> _logger;
 
         public ProductsService(
@@ -36,6 +38,7 @@ namespace eCommerce.BusinessLogicLayer.Services
             IMapper mapper,
             IProductsRepository productsRepository,
             IDistributedCache distributedCache,
+            IRabbitMQPublisher rabbitMQPublisher,
             ILogger<ProductsService> logger)
         {
             _productAddRequestValidator = productAddRequestValidator;
@@ -43,6 +46,7 @@ namespace eCommerce.BusinessLogicLayer.Services
             _mapper = mapper;
             _productsRepository = productsRepository;
             _distributedCache = distributedCache;
+            _rabbitMQPublisher = rabbitMQPublisher;
             _logger = logger;
         }
 
@@ -65,6 +69,7 @@ namespace eCommerce.BusinessLogicLayer.Services
 
             ProductResponse addedProductResponse = _mapper.Map<ProductResponse>(addedProduct);
             await InvalidateProductCacheAsync(addedProductResponse.ProductID);
+            PublishProductEvent(addedProductResponse, "created");
             return addedProductResponse;
         }
 
@@ -81,6 +86,7 @@ namespace eCommerce.BusinessLogicLayer.Services
             if (isDeleted)
             {
                 await InvalidateProductCacheAsync(productID);
+                PublishProductDeleted(productID);
             }
 
             return isDeleted;
@@ -157,6 +163,10 @@ namespace eCommerce.BusinessLogicLayer.Services
 
             ProductResponse? updatedProductResponse = _mapper.Map<ProductResponse>(updatedProduct);
             await InvalidateProductCacheAsync(productUpdateRequest.ProductID);
+            if (updatedProductResponse != null)
+            {
+                PublishProductEvent(updatedProductResponse, "updated");
+            }
             return updatedProductResponse;
         }
 
@@ -196,6 +206,26 @@ namespace eCommerce.BusinessLogicLayer.Services
             {
                 _logger.LogWarning(ex, "Redis indisponível ao gravar a chave {CacheKey}.", cacheKey);
             }
+        }
+
+        private void PublishProductEvent(ProductResponse product, string eventType)
+        {
+            _rabbitMQPublisher.Publish(
+                $"product.{eventType}",
+                new ProductEventMessage(
+                    product.ProductID,
+                    product.ProductName,
+                    product.Category.ToString(),
+                    product.UnitPrice,
+                    product.QuantityInStock,
+                    eventType));
+        }
+
+        private void PublishProductDeleted(Guid productID)
+        {
+            _rabbitMQPublisher.Publish(
+                "product.deleted",
+                new ProductEventMessage(productID, null, null, null, null, "deleted"));
         }
 
         private async Task InvalidateProductCacheAsync(Guid productID)
