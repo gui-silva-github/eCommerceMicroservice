@@ -1,5 +1,8 @@
 :host {
   display: block;
+  height: 100%;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .top-bar form {
@@ -19,10 +22,11 @@
   height: 1.25rem;
   margin-left: 0.35rem;
   padding: 0 0.35rem;
-  border-radius: 999px;
-  background: var(--accent-600);
+  border-radius: 7px;
+  background: var(--accent-500);
   color: #fff;
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1;
+  animation: badge-pop 0.35s ease;
 }

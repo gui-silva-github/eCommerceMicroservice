@@ -1,0 +1,189 @@
+/* Motion system — Harbor Market */
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes badge-pop {
+  0% { transform: scale(0.55); }
+  65% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+@keyframes soft-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.72; transform: scale(0.98); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes glow-line {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+@keyframes list-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes check-pop {
+  0% { transform: scale(0.4) rotate(-12deg); opacity: 0; }
+  70% { transform: scale(1.15) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes feedback-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+
+.feedback-enter {
+  animation: feedback-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.feedback-leave {
+  animation: feedback-out 0.2s ease both;
+}
+
+.route-fade-enter {
+  animation: rise-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+
+.anim-fade {
+  animation: fade-in 0.3s ease both;
+}
+
+.anim-scale {
+  animation: scale-in var(--transition-med) both;
+}
+
+.anim-slide-left {
+  animation: slide-in-left var(--transition-med) both;
+}
+
+.anim-slide-right {
+  animation: slide-in-right var(--transition-med) both;
+}
+
+.anim-delay-1 { animation-delay: 0.04s; }
+.anim-delay-2 { animation-delay: 0.08s; }
+.anim-delay-3 { animation-delay: 0.12s; }
+.anim-delay-4 { animation-delay: 0.16s; }
+.anim-delay-5 { animation-delay: 0.2s; }
+
+.stagger-children > * {
+  animation: list-in var(--transition-med) both;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.03s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.07s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.11s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.19s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.23s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.27s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.31s; }
+.stagger-children > *:nth-child(9) { animation-delay: 0.35s; }
+.stagger-children > *:nth-child(10) { animation-delay: 0.39s; }
+.stagger-children > *:nth-child(n + 11) { animation-delay: 0.42s; }
+
+.skeleton {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--surface-muted) 0%,
+    #f8fbfa 45%,
+    var(--surface-muted) 90%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.35s ease-in-out infinite;
+}
+
+.interactive-press:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

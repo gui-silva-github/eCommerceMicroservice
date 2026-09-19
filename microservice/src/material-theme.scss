@@ -4,12 +4,12 @@ html {
   @include mat.theme((
     color: (
       theme-type: light,
-      primary: mat.$azure-palette,
-      tertiary: mat.$violet-palette,
+      primary: mat.$cyan-palette,
+      tertiary: mat.$orange-palette,
     ),
     typography: (
-      plain-family: 'Inter',
-      brand-family: 'Inter',
+      plain-family: 'Manrope',
+      brand-family: 'Sora',
     ),
     density: 0,
   ));

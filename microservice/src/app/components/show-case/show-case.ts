@@ -1,5 +1,5 @@
-import { Component, inject } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
+import { Component, computed, inject } from '@angular/core';
+import { CurrencyPipe, NgStyle } from '@angular/common';
 import { ProductsService } from '../../services/products.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
@@ -9,11 +9,13 @@ import { RouterModule } from '@angular/router';
 import { UsersService } from '../../services/users.service';
 import { ProductResponse } from '../../models/product-response';
 import { CartService } from '../../services/cart.service';
+import { productMediaStyle } from '../../utils/product-media.util';
 
 @Component({
   selector: 'app-show-case',
   imports: [
     CurrencyPipe,
+    NgStyle,
     MatCardModule,
     MatDividerModule,
     MatButtonModule,
@@ -27,6 +29,9 @@ export class ShowCase {
   readonly productsService = inject(ProductsService);
   readonly usersService = inject(UsersService);
   readonly cartService = inject(CartService);
+  readonly mediaStyle = productMediaStyle;
+
+  readonly catalogCount = computed(() => this.productsService.catalog().length);
 
   constructor() {
     if (!this.productsService.hasProducts()) {

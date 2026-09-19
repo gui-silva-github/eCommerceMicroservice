@@ -15,6 +15,27 @@
   gap: 1rem;
 }
 
+.cart-items > * {
+  animation: fade-in 0.25s ease both;
+}
+
+.cart-items > *:nth-child(1) { animation-delay: 0.04s; }
+.cart-items > *:nth-child(2) { animation-delay: 0.08s; }
+.cart-items > *:nth-child(3) { animation-delay: 0.12s; }
+.cart-items > *:nth-child(4) { animation-delay: 0.16s; }
+.cart-items > *:nth-child(5) { animation-delay: 0.2s; }
+.cart-items > *:nth-child(n + 6) { animation-delay: 0.24s; }
+
+.cart-item {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+
+.cart-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md) !important;
+}
+
 .cart-item__controls {
   display: flex;
   align-items: center;
@@ -27,21 +48,40 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
 }
 
 .quantity-value {
   min-width: 2rem;
   text-align: center;
+  font-family: var(--font-brand);
   font-weight: 700;
+  transition: transform var(--transition-fast);
 }
 
 .item-total {
-  color: var(--primary-700);
+  font-family: var(--font-brand);
+  color: var(--ink);
+  letter-spacing: -0.02em;
 }
 
 .cart-summary {
   position: sticky;
-  top: 1rem;
+  top: 5.25rem;
+  border: 1px solid var(--border-color);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(232, 154, 60, 0.1), transparent 45%),
+    var(--surface-elevated) !important;
+}
+
+.quantity-controls button {
+  transition: transform var(--transition-fast), background var(--transition-fast) !important;
+}
+
+.quantity-controls button:active {
+  transform: scale(0.9);
 }
 
 .summary-row {
@@ -55,14 +95,16 @@
 .summary-row--total {
   margin-top: 0.5rem;
   margin-bottom: 1rem;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   color: var(--text-primary);
+  font-family: var(--font-brand);
 }
 
 .checkout-error {
   margin-top: 1rem;
-  color: var(--warn-700, #c62828);
+  color: var(--danger);
   font-size: 0.9rem;
+  animation: feedback-in 0.25s ease both;
 }
 
 @media (max-width: 900px) {

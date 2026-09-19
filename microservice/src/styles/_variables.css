@@ -1,33 +1,57 @@
 :root {
-  --primary-50: #eef2ff;
-  --primary-100: #e0e7ff;
-  --primary-200: #c7d2fe;
-  --primary-400: #818cf8;
-  --primary-500: #6366f1;
-  --primary-600: #4f46e5;
-  --primary-700: #4338ca;
-  --primary-800: #3730a3;
-  --accent-100: #ede9fe;
-  --accent-200: #ddd6fe;
-  --accent-300: #c4b5fd;
-  --accent-400: #a78bfa;
-  --accent-500: #8b5cf6;
-  --accent-600: #7c3aed;
-  --surface: #f8fafc;
+  /* Harbor Market - teal ink + copper accent */
+  --primary-50: #eef8f6;
+  --primary-100: #d5efe9;
+  --primary-200: #a9ddd2;
+  --primary-400: #2a9d8f;
+  --primary-500: #1f7a70;
+  --primary-600: #17665e;
+  --primary-700: #124f49;
+  --primary-800: #0d3a36;
+
+  --accent-100: #fceede;
+  --accent-200: #f6d4a8;
+  --accent-300: #efb56a;
+  --accent-400: #e89a3c;
+  --accent-500: #d9821f;
+  --accent-600: #b86a14;
+
+  --surface: #f3f6f5;
   --surface-elevated: #ffffff;
-  --sidebar-bg: linear-gradient(165deg, #1e3a8a 0%, #4338ca 42%, #6d28d9 100%);
-  --text-primary: #1e1b4b;
-  --text-secondary: #64748b;
-  --text-on-dark: #f8fafc;
-  --border-color: rgba(99, 102, 241, 0.18);
-  --success: #059669;
-  --warning: #d97706;
-  --danger: #dc2626;
-  --shadow-sm: 0 1px 3px rgba(30, 58, 138, 0.08);
-  --shadow-md: 0 8px 24px rgba(79, 70, 229, 0.12);
-  --shadow-lg: 0 16px 40px rgba(79, 70, 229, 0.16);
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
+  --surface-muted: #e8efed;
+
+  --ink: #14201e;
+  --ink-soft: #243532;
+
+  --sidebar-bg:
+    radial-gradient(120% 80% at 0% 0%, rgba(42, 157, 143, 0.28) 0%, transparent 55%),
+    radial-gradient(90% 60% at 100% 100%, rgba(184, 106, 20, 0.18) 0%, transparent 50%),
+    linear-gradient(165deg, #0d1f1d 0%, #124f49 52%, #0d3a36 100%);
+
+  --text-primary: #14201e;
+  --text-secondary: #5b6e69;
+  --text-on-dark: #f4faf8;
+
+  --border-color: rgba(18, 79, 73, 0.14);
+  --border-strong: rgba(18, 79, 73, 0.28);
+
+  --success: #0f766e;
+  --warning: #b45309;
+  --danger: #c2410c;
+
+  --shadow-sm: 0 1px 2px rgba(13, 58, 54, 0.06);
+  --shadow-md: 0 10px 28px rgba(13, 58, 54, 0.08);
+  --shadow-lg: 0 18px 40px rgba(13, 58, 54, 0.12);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+
+  --font-brand: 'Sora', 'Segoe UI', sans-serif;
+  --font-body: 'Manrope', 'Segoe UI', sans-serif;
+
   --transition-fast: 0.2s ease;
+  --transition-med: 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+
+  --sidebar-width: 268px;
 }

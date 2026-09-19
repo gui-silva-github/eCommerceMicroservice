@@ -4,26 +4,30 @@
 }
 
 .data-table .mat-mdc-header-row {
-  background: linear-gradient(135deg, var(--primary-800) 0%, var(--primary-600) 50%, var(--accent-600) 100%) !important;
+  background: linear-gradient(135deg, var(--primary-800) 0%, var(--primary-600) 100%) !important;
   height: 52px;
 }
 
 .data-table .mat-mdc-header-cell {
   color: #ffffff !important;
+  font-family: var(--font-brand) !important;
   font-weight: 700 !important;
-  font-size: 0.78rem !important;
-  letter-spacing: 0.06em;
+  font-size: 0.74rem !important;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   border-bottom: none !important;
 }
 
 .data-table .mat-mdc-row {
-  transition: background var(--transition-fast);
+  transition: background var(--transition-fast), transform var(--transition-fast);
 }
 
 .data-table .mat-mdc-row:hover {
   background: var(--primary-50) !important;
+  transform: translateX(2px);
 }
+
+
 
 .data-table .mat-mdc-cell {
   color: var(--text-primary);
@@ -42,17 +46,19 @@
   margin-top: 0.2rem;
   font-size: 0.78rem;
   font-weight: 400;
-  color: var(--text-secondary, #64748b);
+  color: var(--text-secondary);
 }
 
 .data-table .cell-category {
-  color: var(--accent-600);
-  font-weight: 600;
+  color: var(--primary-700);
+  font-weight: 700;
 }
 
 .data-table .cell-price {
+  font-family: var(--font-brand);
   font-weight: 700;
-  color: var(--primary-700);
+  color: var(--ink);
+  letter-spacing: -0.02em;
 }
 
 .data-table .cell-actions {
