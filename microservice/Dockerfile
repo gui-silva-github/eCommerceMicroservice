@@ -6,7 +6,9 @@ COPY package.json package-lock.json* ./
 RUN npm ci --legacy-peer-deps
 
 COPY . .
-RUN npm run build
+# production = Compose (localhost:7010) | azure-prod = gateway no Container Apps
+ARG BUILD_CONFIGURATION=production
+RUN npm run build -- --configuration=${BUILD_CONFIGURATION}
 
 FROM nginx:1.27-alpine AS final
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
