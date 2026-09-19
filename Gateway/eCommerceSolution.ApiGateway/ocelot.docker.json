@@ -4,7 +4,7 @@
       "DownstreamPathTemplate": "/api/Auth/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "users-api", "Port": 8080 }
+        { "Host": "users-api-app", "Port": 80 }
       ],
       "UpstreamPathTemplate": "/api/Auth/{everything}",
       "UpstreamHttpMethod": [ "POST", "GET" ],
@@ -25,7 +25,7 @@
       "DownstreamPathTemplate": "/api/Users/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "users-api", "Port": 8080 }
+        { "Host": "users-api-app", "Port": 80 }
       ],
       "UpstreamPathTemplate": "/api/Users/{everything}",
       "UpstreamHttpMethod": [ "GET" ],
@@ -50,7 +50,7 @@
       "DownstreamPathTemplate": "/api/products",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "products-api", "Port": 8080 }
+        { "Host": "products-api-app", "Port": 80 }
       ],
       "UpstreamPathTemplate": "/api/products",
       "UpstreamHttpMethod": [ "GET" ],
@@ -75,7 +75,7 @@
       "DownstreamPathTemplate": "/api/products/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "products-api", "Port": 8080 }
+        { "Host": "products-api-app", "Port": 80 }
       ],
       "UpstreamPathTemplate": "/api/products/{everything}",
       "UpstreamHttpMethod": [ "GET" ],
@@ -100,7 +100,7 @@
       "DownstreamPathTemplate": "/api/products",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "products-api", "Port": 8080 }
+        { "Host": "products-api-app", "Port": 80 }
       ],
       "UpstreamPathTemplate": "/api/products",
       "UpstreamHttpMethod": [ "POST", "PUT" ],
@@ -121,7 +121,7 @@
       "DownstreamPathTemplate": "/api/products/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "products-api", "Port": 8080 }
+        { "Host": "products-api-app", "Port": 80 }
       ],
       "UpstreamPathTemplate": "/api/products/{everything}",
       "UpstreamHttpMethod": [ "POST", "PUT", "DELETE" ],
@@ -142,7 +142,7 @@
       "DownstreamPathTemplate": "/api/Orders",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "orders-api", "Port": 8080 }
+        { "Host": "orders-api-app", "Port": 80 }
       ],
       "UpstreamPathTemplate": "/api/Orders",
       "UpstreamHttpMethod": [ "GET", "POST" ],
@@ -163,7 +163,7 @@
       "DownstreamPathTemplate": "/api/Orders/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "orders-api", "Port": 8080 }
+        { "Host": "orders-api-app", "Port": 80 }
       ],
       "UpstreamPathTemplate": "/api/Orders/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
