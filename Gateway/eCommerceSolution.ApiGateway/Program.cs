@@ -10,11 +10,16 @@ string ocelotFile = builder.Environment.IsEnvironment("Docker")
 
 builder.Configuration.AddJsonFile(ocelotFile, optional: false, reloadOnChange: true);
 
+// Origens do Angular: local (ng serve) + opcional via Cors__Origins (CSV) no Azure.
+var corsOrigins = builder.Configuration["Cors:Origins"]
+    ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    ?? ["http://localhost:4200", "http://127.0.0.1:4200"];
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins(corsOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
