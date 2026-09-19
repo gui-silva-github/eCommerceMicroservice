@@ -1,55 +1,121 @@
-<div class="top-container flex">
-  <nav class="side-bar flex flex-column" aria-label="Menu principal">
-    <div class="flex app-title-container title-color">
-      <mat-icon class="title-color" aria-hidden="true">storefront</mat-icon>
-      <span class="e-commerce-title">e-Commerce</span>
-    </div>
+<div
+  class="top-container flex"
+  [class.shell--nav-open]="navOpen()"
+  [class.shell--auth]="isAuthRoute()"
+>
+  @if (!isAuthRoute() && navOpen()) {
+    <div class="sidebar-backdrop" (click)="closeNav()" aria-hidden="true"></div>
+  }
 
-    <a mat-button [routerLink]="['/products', 'showcase']" class="side-bar-button" routerLinkActive="active-link">
-      <mat-icon aria-hidden="true">home</mat-icon>
-      <span>Home</span>
+  @if (!isAuthRoute()) {
+  <nav class="side-bar flex flex-column" aria-label="Menu principal">
+    <a
+      class="app-title-container"
+      [routerLink]="['/products', 'showcase']"
+      (click)="closeNav()"
+      aria-label="Harbor - ir para o catálogo"
+    >
+      <img class="brand-logo" src="harbor.jpg" alt="" />
+      <div class="brand-copy">
+        <span class="e-commerce-title">Harbor</span>
+        <span class="brand-tagline">Anchored in trust</span>
+      </div>
     </a>
 
-    @if (usersService.isAuthenticated && usersService.isAdmin == false) {
-      <a mat-button [routerLink]="['/cart']" class="side-bar-button cart-link" routerLinkActive="active-link">
-        <mat-icon aria-hidden="true">shopping_cart</mat-icon>
-        <span>Carrinho</span>
-        @if (cartService.itemCount() > 0) {
-          <span class="cart-badge">{{ cartService.itemCount() }}</span>
-        }
+    <div class="side-bar__nav">
+      <a
+        mat-button
+        [routerLink]="['/products', 'showcase']"
+        class="side-bar-button"
+        routerLinkActive="active-link"
+        (click)="closeNav()"
+      >
+        <mat-icon aria-hidden="true">storefront</mat-icon>
+        <span>Catálogo</span>
       </a>
-    }
 
-    @if (usersService.isAuthenticated && usersService.isAdmin == false) {
-      <a mat-button [routerLink]="['/orders']" class="side-bar-button" routerLinkActive="active-link">
-        <mat-icon aria-hidden="true">receipt_long</mat-icon>
-        <span>Pedidos</span>
-      </a>
-    }
+      @if (usersService.isAuthenticated && usersService.isAdmin == false) {
+        <a
+          mat-button
+          [routerLink]="['/cart']"
+          class="side-bar-button cart-link"
+          routerLinkActive="active-link"
+          (click)="closeNav()"
+        >
+          <mat-icon aria-hidden="true">shopping_cart</mat-icon>
+          <span>Carrinho</span>
+          @if (cartService.itemCount() > 0) {
+            <span class="cart-badge">{{ cartService.itemCount() }}</span>
+          }
+        </a>
+      }
 
-    @if (usersService.isAuthenticated && usersService.isAdmin) {
-      <a mat-button [routerLink]="['/admin', 'products']" class="side-bar-button" routerLinkActive="active-link">
-        <mat-icon aria-hidden="true">inventory_2</mat-icon>
-        <span>Produtos</span>
-      </a>
-    }
+      @if (usersService.isAuthenticated && usersService.isAdmin == false) {
+        <a
+          mat-button
+          [routerLink]="['/orders']"
+          class="side-bar-button"
+          routerLinkActive="active-link"
+          (click)="closeNav()"
+        >
+          <mat-icon aria-hidden="true">receipt_long</mat-icon>
+          <span>Pedidos</span>
+        </a>
+      }
 
-    @if (usersService.isAuthenticated && usersService.isAdmin) {
-      <a mat-button [routerLink]="['/admin', 'orders']" class="side-bar-button" routerLinkActive="active-link">
-        <mat-icon aria-hidden="true">assignment</mat-icon>
-        <span>Pedidos</span>
-      </a>
-    }
+      @if (usersService.isAuthenticated && usersService.isAdmin) {
+        <a
+          mat-button
+          [routerLink]="['/admin', 'products']"
+          class="side-bar-button"
+          routerLinkActive="active-link"
+          (click)="closeNav()"
+        >
+          <mat-icon aria-hidden="true">inventory_2</mat-icon>
+          <span>Produtos</span>
+        </a>
+      }
 
-    <span class="spacer"></span>
+      @if (usersService.isAuthenticated && usersService.isAdmin) {
+        <a
+          mat-button
+          [routerLink]="['/admin', 'orders']"
+          class="side-bar-button"
+          routerLinkActive="active-link"
+          (click)="closeNav()"
+        >
+          <mat-icon aria-hidden="true">assignment</mat-icon>
+          <span>Pedidos</span>
+        </a>
+      }
 
-    <div class="copy-right">
-      &copy; Todos os direitos reservados
+      <span class="spacer"></span>
+
+      <div class="copy-right">
+        Harbor eCommerce<br />
+        &copy; {{ currentYear }}
+      </div>
     </div>
   </nav>
+  }
 
   <div class="app-container">
     <mat-toolbar class="top-bar">
+      @if (!isAuthRoute()) {
+        <button
+          mat-icon-button
+          type="button"
+          class="menu-toggle"
+          (click)="toggleNav()"
+          [attr.aria-label]="navOpen() ? 'Fechar menu' : 'Abrir menu'"
+          [attr.aria-expanded]="navOpen()"
+        >
+          <mat-icon>{{ navOpen() ? 'close' : 'menu' }}</mat-icon>
+        </button>
+      }
+
+     
+
       <span class="spacer"></span>
 
       <form id="search-form" [formGroup]="searchForm" (ngSubmit)="search()" role="search">
@@ -70,6 +136,16 @@
           </div>
         </div>
       </form>
+
+      <a
+        mat-button
+        [routerLink]="['/products', 'showcase']"
+        class="top-bar-button"
+        routerLinkActive="active-link"
+      >
+        <mat-icon aria-hidden="true">storefront</mat-icon>
+        <span>Catálogo</span>
+      </a>
 
       @if (!usersService.isAuthenticated) {
         <a mat-button [routerLink]="['/auth', 'login']" class="top-bar-button" routerLinkActive="active-link">

@@ -1,12 +1,22 @@
-<div class="page-header">
-  <span class="page-header__icon" aria-hidden="true">
-    <mat-icon>storefront</mat-icon>
-  </span>
-  <div class="page-header__text">
-    <span>Catálogo de Produtos</span>
-    <span class="page-header__subtitle">Explore as melhores ofertas da loja</span>
+<section class="catalog-hero">
+  <div class="catalog-hero__copy">
+    <img class="brand-logo brand-logo--catalog" src="harbor.jpg" alt="Harbor" />
+    <span class="catalog-hero__eyebrow">Harbor eCommerce</span>
+    <h1 class="catalog-hero__title">Catálogo de produtos</h1>
+    <p class="catalog-hero__subtitle">
+      Explore o estoque com cache rápido, navegação fluida e checkout direto pelo gateway.
+    </p>
   </div>
-</div>
+
+  @if (productsService.hasProducts()) {
+    <div class="catalog-hero__meta" aria-label="Resumo do catálogo">
+      <div class="catalog-hero__stat">
+        <strong>{{ catalogCount() }}</strong>
+        <span>itens</span>
+      </div>
+    </div>
+  }
+</section>
 
 @if (productsService.loading()) {
   <div class="empty-state" role="status">
@@ -37,8 +47,8 @@
   </div>
 } @else {
   @if (cartService.feedbackMessage(); as feedback) {
-    <div class="cart-feedback" role="status">
-      <mat-icon aria-hidden="true">check_circle</mat-icon>
+    <div class="cart-feedback" role="status" animate.enter="feedback-enter" animate.leave="feedback-leave">
+      <mat-icon aria-hidden="true" class="cart-feedback__icon">check_circle</mat-icon>
       {{ feedback }}
     </div>
   }
@@ -46,19 +56,22 @@
   <div class="product-grid">
     @for (product of productsService.catalog(); track product.productID) {
       <mat-card class="product">
+        <div class="product-media" [ngStyle]="mediaStyle(product)" aria-hidden="true">
+          <span class="product-media__initial">{{ product.productName.charAt(0) }}</span>
+          <span class="product-media__stock">
+            {{ product.quantityInStock > 0 ? product.quantityInStock + ' em estoque' : 'Esgotado' }}
+          </span>
+        </div>
+
         <mat-card-header>
           <mat-card-subtitle>
-            <span class="category-chip">
-              <mat-icon aria-hidden="true">category</mat-icon>
-              {{ product.category }}
-            </span>
+            <span class="category-chip">{{ product.category }}</span>
           </mat-card-subtitle>
           <mat-card-title>{{ product.productName }}</mat-card-title>
         </mat-card-header>
 
         <mat-card-content class="mt">
           <p class="price-tag">
-            <mat-icon aria-hidden="true">sell</mat-icon>
             {{ product.unitPrice | currency:'BRL':'symbol':'1.2-2' }}
           </p>
           <mat-divider></mat-divider>
@@ -68,12 +81,12 @@
           @if (usersService.isAuthenticated && !usersService.isAdmin) {
             <button mat-flat-button color="primary" class="btn-icon-action" type="button" (click)="addToCart(product)">
               <mat-icon aria-hidden="true">add_shopping_cart</mat-icon>
-              Adicionar ao Carrinho
+              Adicionar
             </button>
           } @else if (!usersService.isAuthenticated) {
-            <a mat-button color="primary" [routerLink]="['/auth', 'login']" class="btn-icon-action">
+            <a mat-stroked-button color="primary" [routerLink]="['/auth', 'login']" class="btn-icon-action">
               <mat-icon aria-hidden="true">login</mat-icon>
-              Login para comprar
+              Entrar para comprar
             </a>
           }
         </mat-card-actions>

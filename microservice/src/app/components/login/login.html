@@ -1,56 +1,106 @@
-<div class="container">
-  <mat-card class="w-50 auth-card">
-    <mat-card-header>
-      <mat-card-title class="card-title">
-        <mat-icon aria-hidden="true">login</mat-icon>
-        Login
-      </mat-card-title>
-    </mat-card-header>
+<div class="auth-shell">
+  <aside class="auth-hero">
+    <a class="auth-hero__brand" [routerLink]="['/products', 'showcase']" aria-label="Ir para o catálogo Harbor">
+      <img class="brand-logo brand-logo--hero" src="harbor.jpg" alt="Harbor" />
+    </a>
 
-    <mat-card-content class="flex flex-column">
-      @if (errorMessage(); as message) {
-        <div class="app-alert app-alert--error" role="alert">
-          <mat-icon aria-hidden="true">error_outline</mat-icon>
-          <div class="app-alert__content">
-            <p class="app-alert__title">Não foi possível entrar</p>
-            <p class="app-alert__message">{{ message }}</p>
-          </div>
-        </div>
-      }
+    <div class="auth-hero__content">
+      <span class="auth-hero__eyebrow">Área do cliente</span>
+      <h1 class="auth-hero__title">Bem-vindo de volta</h1>
+      <p class="auth-hero__text">
+        Entre para montar o carrinho, acompanhar pedidos e comprar com a stack de microserviços.
+      </p>
+      <ul class="auth-hero__points">
+        <li>Catálogo com cache Redis</li>
+        <li>Checkout via API Gateway</li>
+        <li>Pedidos sincronizados em tempo real</li>
+      </ul>
+      <a class="auth-hero__catalog" [routerLink]="['/products', 'showcase']">
+        <mat-icon aria-hidden="true">storefront</mat-icon>
+        Continuar no catálogo
+      </a>
+    </div>
+  </aside>
 
-      <form [formGroup]="loginForm" (ngSubmit)="login()">
-        <mat-form-field class="w-100">
-          <mat-label>Email</mat-label>
-          <mat-icon matPrefix aria-hidden="true">email</mat-icon>
-          <input matInput type="email" placeholder="seu@email.com" formControlName="Email" />
-          @if (emailFormControl.hasError('required')) {
-            <mat-error>Email é obrigatório</mat-error>
-          } @else if (emailFormControl.hasError('email')) {
-            <mat-error>Formato inválido</mat-error>
-          } @else if (hasApiError(emailFormControl)) {
-            <mat-error>{{ getApiError(emailFormControl) }}</mat-error>
+  <div class="auth-panel">
+    <div class="auth-panel__inner">
+      <nav class="auth-switch" aria-label="Alternar autenticação">
+        <a class="auth-switch__item auth-switch__item--active" [routerLink]="['/auth', 'login']" aria-current="page">
+          Entrar
+        </a>
+        <a class="auth-switch__item" [routerLink]="['/auth', 'register']">
+          Criar conta
+        </a>
+      </nav>
+
+      <mat-card class="auth-card">
+        <mat-card-header>
+          <mat-card-title class="card-title">
+            <mat-icon aria-hidden="true">login</mat-icon>
+            Entrar na conta
+          </mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content class="flex flex-column">
+          <p class="auth-card__hint">Use seu e-mail e senha para continuar.</p>
+
+          @if (errorMessage(); as message) {
+            <div class="app-alert app-alert--error" role="alert">
+              <mat-icon aria-hidden="true">error_outline</mat-icon>
+              <div class="app-alert__content">
+                <p class="app-alert__title">Não foi possível entrar</p>
+                <p class="app-alert__message">{{ message }}</p>
+              </div>
+            </div>
           }
-        </mat-form-field>
 
-        <mat-form-field class="w-100">
-          <mat-label>Senha</mat-label>
-          <mat-icon matPrefix aria-hidden="true">lock</mat-icon>
-          <input matInput type="password" placeholder="Sua senha" formControlName="Password" />
-          @if (passwordFormControl.hasError('required')) {
-            <mat-error>Senha é obrigatória</mat-error>
-          } @else if (hasApiError(passwordFormControl)) {
-            <mat-error>{{ getApiError(passwordFormControl) }}</mat-error>
-          }
-        </mat-form-field>
+          <form [formGroup]="loginForm" (ngSubmit)="login()">
+            <mat-form-field class="w-100" appearance="outline">
+              <mat-label>Email</mat-label>
+              <mat-icon matPrefix aria-hidden="true">email</mat-icon>
+              <input matInput type="email" placeholder="seu@email.com" formControlName="Email" autocomplete="email" />
+              @if (emailFormControl.hasError('required')) {
+                <mat-error>Email é obrigatório</mat-error>
+              } @else if (emailFormControl.hasError('email')) {
+                <mat-error>Formato inválido</mat-error>
+              } @else if (hasApiError(emailFormControl)) {
+                <mat-error>{{ getApiError(emailFormControl) }}</mat-error>
+              }
+            </mat-form-field>
 
-        <div class="flex button-panel">
-          <div class="empty"></div>
-          <button mat-flat-button color="primary" type="submit" class="btn-primary-action" [disabled]="isSubmitting()">
-            <mat-icon aria-hidden="true">{{ isSubmitting() ? 'hourglass_top' : 'login' }}</mat-icon>
-            {{ isSubmitting() ? 'Entrando...' : 'Entrar' }}
-          </button>
-        </div>
-      </form>
-    </mat-card-content>
-  </mat-card>
+            <mat-form-field class="w-100" appearance="outline">
+              <mat-label>Senha</mat-label>
+              <mat-icon matPrefix aria-hidden="true">lock</mat-icon>
+              <input matInput type="password" placeholder="Sua senha" formControlName="Password" autocomplete="current-password" />
+              @if (passwordFormControl.hasError('required')) {
+                <mat-error>Senha é obrigatória</mat-error>
+              } @else if (hasApiError(passwordFormControl)) {
+                <mat-error>{{ getApiError(passwordFormControl) }}</mat-error>
+              }
+            </mat-form-field>
+
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              class="btn-primary-action auth-submit"
+              [disabled]="isSubmitting()"
+            >
+              <mat-icon aria-hidden="true">{{ isSubmitting() ? 'hourglass_top' : 'arrow_forward' }}</mat-icon>
+              {{ isSubmitting() ? 'Entrando...' : 'Continuar' }}
+            </button>
+          </form>
+
+          <p class="auth-card__footer">
+            Ainda não tem conta?
+            <a [routerLink]="['/auth', 'register']">Criar cadastro</a>
+          </p>
+          <p class="auth-card__footer">
+            Ou
+            <a [routerLink]="['/products', 'showcase']">explore o catálogo sem entrar</a>
+          </p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
 </div>
