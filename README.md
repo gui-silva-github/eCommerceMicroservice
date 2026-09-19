@@ -1,5 +1,9 @@
 # e-Commerce Microservices
 
+> **Deploy atual: Azure Container Apps.**  
+> A stack deste repositório está publicada no **Azure Container Apps**. As APIs, o API Gateway e a infra (bancos, Redis e RabbitMQ) rodam no mesmo Environment.  
+> O desenvolvimento local continua pelo **Docker Compose**.
+
 Solução de e-commerce distribuída com **3 microserviços .NET 8**, **API Gateway (Ocelot)**, **Redis**, **RabbitMQ**, frontend **Angular 21** e persistência poliglota (PostgreSQL, MySQL e MongoDB). Cada serviço possui banco próprio, deploy independente e responsabilidade de domínio bem definida.
 
 O frontend fala **apenas com o gateway** (`:7010`). O **OrdersService** (dependant) chama **Users** e **Products** (dependencies) de forma **síncrona** via `HttpClient` + **Polly**, e mantém cache local sincronizado de forma **assíncrona** via **RabbitMQ**.
@@ -206,6 +210,8 @@ Swagger continua nas portas diretas dos microserviços (não passa pelo gateway)
 ---
 
 ## Como executar
+
+A versão publicada desta stack está no **Azure Container Apps**. Os passos abaixo são só para rodar **localmente** com Docker Compose.
 
 ### Stack completa (recomendado)
 
