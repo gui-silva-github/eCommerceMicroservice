@@ -49,6 +49,41 @@
               ],
               "outputHashing": "all"
             },
+            "azure": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environment.ts",
+                  "with": "src/environment.azure.ts"
+                }
+              ]
+            },
+            "azure-prod": {
+              "optimization": {
+                "fonts": false
+              },
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/environment.ts",
+                  "with": "src/environment.azure.ts"
+                }
+              ]
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
@@ -62,6 +97,9 @@
           "configurations": {
             "production": {
               "buildTarget": "microservice:build:production"
+            },
+            "azure": {
+              "buildTarget": "microservice:build:azure"
             },
             "development": {
               "buildTarget": "microservice:build:development"
