@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import {
   applyApiFieldErrors,
   clearApiFieldErrors,
@@ -20,7 +20,16 @@ import {
 
 @Component({
   selector: 'app-login',
-  imports: [CommonModule, MatFormFieldModule, MatInputModule, ReactiveFormsModule, MatCardModule, MatButtonModule, MatIconModule],
+  imports: [
+    CommonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    ReactiveFormsModule,
+    MatCardModule,
+    MatButtonModule,
+    MatIconModule,
+    RouterModule,
+  ],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })

@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, NgStyle } from '@angular/common';
 import { ProductsService } from '../../services/products.service';
 import { ProductResponse } from '../../models/product-response';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,11 +9,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { UsersService } from '../../services/users.service';
 import { CartService } from '../../services/cart.service';
+import { productMediaStyle } from '../../utils/product-media.util';
 
 @Component({
   selector: 'app-search',
   imports: [
     CurrencyPipe,
+    NgStyle,
     MatCardModule,
     MatDividerModule,
     MatButtonModule,
@@ -28,6 +30,7 @@ export class Search implements OnInit {
   private readonly activatedRoute = inject(ActivatedRoute);
   readonly usersService = inject(UsersService);
   readonly cartService = inject(CartService);
+  readonly mediaStyle = productMediaStyle;
 
   readonly products = signal<ProductResponse[]>([]);
   readonly searchTerm = signal('');
