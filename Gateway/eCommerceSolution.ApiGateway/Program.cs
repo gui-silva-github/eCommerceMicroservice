@@ -4,9 +4,12 @@ using Ocelot.Provider.Polly;
 
 var builder = WebApplication.CreateBuilder(args);
 
-string ocelotFile = builder.Environment.IsEnvironment("Docker")
-    ? "ocelot.docker.json"
-    : "ocelot.json";
+string ocelotFile = builder.Environment.EnvironmentName switch
+{
+    "Docker" => "ocelot.docker.json",
+    "Aks" => "ocelot.docker.aks.json",
+    _ => "ocelot.json"
+};
 
 builder.Configuration.AddJsonFile(ocelotFile, optional: false, reloadOnChange: true);
 

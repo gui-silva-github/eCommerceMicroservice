@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-api
+  namespace: ecommerce
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orders-api
+  template:
+    metadata:
+      labels:
+        app: orders-api
+    spec:
+      containers:
+        - name: orders-api
+          image: ecommerce-orders-api:aks-v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+            - name: MONGODB_HOST
+              value: mongodb.ecommerce-data.svc.cluster.local
+            - name: MONGODB_PORT
+              value: "27017"
+            - name: ConnectionStrings__Redis
+              value: redis.ecommerce-data.svc.cluster.local:6379
+            - name: UsersMicroserviceBaseUrl
+              value: http://users-api.ecommerce.svc.cluster.local
+            - name: ProductsMicroserviceBaseUrl
+              value: http://products-api.ecommerce.svc.cluster.local
+            - name: RabbitMQ__HostName
+              value: rabbitmq.ecommerce-data.svc.cluster.local
+            - name: RabbitMQ__Port
+              value: "5672"
+            - name: RabbitMQ__UserName
+              value: guest
+            - name: RabbitMQ__Password
+              value: guest
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-api
+  namespace: ecommerce
+spec:
+  selector:
+    app: orders-api
+  ports:
+    - port: 80
+      targetPort: 8080
