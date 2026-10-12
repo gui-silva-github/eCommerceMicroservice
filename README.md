@@ -74,6 +74,9 @@ eCommerceMicroservice/
 ├── k8s/                                         # Deployments, StatefulSets, Ingress
 ├── .env.example
 ├── docs/
+│   ├── final-project.png
+│   ├── architecture-microservices.png
+│   └── roteiro-aca-depois-aks.md                # ordem dos comandos ACA → AKS
 └── .github/workflows/ci.yml                     # hoje: dotnet build
 ```
 
@@ -420,6 +423,20 @@ O `ocelot.json` aponta para 5034 / 5035 / 5194. Frontend: `cd microservice && np
 
 O Environment é a rede compartilhada. Apps no mesmo Environment resolvem uns aos outros pelo **nome do Container App**. Não há YAML de Pod. Cada app é um recurso da Azure (`az containerapp create` / `update --image`).
 
+Comandos na ordem (ACA e depois AKS), copiáveis: [`docs/roteiro-aca-depois-aks.md`](docs/roteiro-aca-depois-aks.md).
+
+Ordem de subida no ACA (cada passo espera `Running`):
+
+1. `az group create` + `az acr create` + `az acr login`
+2. `docker build` / `docker push` das imagens `:aca` e `:init` (Postgres/MySQL com seed)
+3. `az containerapp env create` — confirme com `az containerapp env list`
+4. Infra TCP interno: Postgres → MySQL → MongoDB → Redis → RabbitMQ (**5672**, não 15672)
+5. `users-api-app` (hostname do `ocelot.docker.json`)
+6. `products-api-app`
+7. `orders-api-app` (Users/Products por HTTP interno, sem Ocelot)
+8. `api-gateway-app` com `ASPNETCORE_ENVIRONMENT=Docker`
+9. `npm run start:azure` na máquina (FQDN do gateway em `environment.azure.ts`)
+
 ### Lab publicado
 
 | Recurso | Valor |
@@ -442,7 +459,7 @@ Confirme o Environment com `az containerapp env list -g <RESOURCE_GROUP_ACA>`. N
 | `<ACA_REDIS>` | Cache | TCP interno 6379 |
 | `<ACA_RABBIT>` | AMQP | TCP interno **5672** |
 
-No ACA, HTTP interno usa a **porta 80** do ingress, que encaminha ao `targetPort` 8080. Por isso o `ocelot.docker.json` no Azure usa `<ACA_USERS>:80`.
+No ACA, HTTP interno usa a **porta 80** do ingress, que encaminha ao `targetPort` 8080. Por isso o `ocelot.docker.json` no Azure usa `users-api-app:80` (e os pares `products-api-app` / `orders-api-app`). O roteiro cria os Container Apps com esses nomes.
 
 Variáveis (mesmo contrato do Compose, hostnames Azure):
 
@@ -473,7 +490,7 @@ Mongo cria coleção no uso. Redis vazio é aceitável. Exchange e fila do Rabbi
 4. Rabbit UI ≠ AMQP: duas portas.
 5. Testar falha de banco: `az containerapp update -n <ACA_MYSQL> --min-replicas 0 --max-replicas 0`.
 
-Diário do lab: `roteiro-azure-container-apps.md`.
+Roteiro com os comandos: [`docs/roteiro-aca-depois-aks.md`](docs/roteiro-aca-depois-aks.md).
 
 ### Ligar e desligar (custo)
 
@@ -526,16 +543,18 @@ Escolha um SKU de node permitido na sua região (`az aks get-versions` / a lista
 
 No Git as imagens das APIs vão **sem** o hostname do ACR (`ecommerce-postgres:init`). No cluster local, o node precisa do registry completo (`<acr>.azurecr.io/...`).
 
-Ordem de subida (cada passo espera `Running` / health):
+Ordem de subida (cada passo espera `Running` / health). Comandos copiáveis em [`docs/roteiro-aca-depois-aks.md`](docs/roteiro-aca-depois-aks.md).
 
-1. Namespaces `ecommerce` e `ecommerce-data`
-2. Gateway (prova `/health` via `port-forward`)
-3. Postgres (`PGDATA=/var/lib/postgresql/data/pgdata`) → users-api
-4. MySQL, Redis, RabbitMQ → products-api
-5. MongoDB → orders-api
-6. Rebuild do gateway com `ASPNETCORE_ENVIRONMENT=Aks` (arquivo `ocelot.docker.aks.json`)
-7. `az aks approuting enable` + Ingress
-8. Frontend compilado com `aks-prod` (IP do Ingress gravado no JS)
+1. `az aks create --attach-acr` + `az aks get-credentials` (provedor `Microsoft.ContainerService`)
+2. `docker build` / `docker push` com tag `:aks-v1` / `:aks-v2` e prefixo `<acr>.azurecr.io/`
+3. Namespaces `ecommerce` e `ecommerce-data`
+4. Gateway (`k8s/gateway.yaml`, prova `/health` via `port-forward`)
+5. Postgres (`PGDATA=/var/lib/postgresql/data/pgdata`) → users-api
+6. MySQL, Redis, RabbitMQ → products-api
+7. MongoDB → orders-api
+8. O Deployment do gateway já usa `ASPNETCORE_ENVIRONMENT=Aks` (`ocelot.docker.aks.json`)
+9. `az aks approuting enable` + `kubectl apply -f k8s/ingress.yaml` (pegue o `ADDRESS`)
+10. Frontend compilado com `aks-prod` (IP do Ingress gravado no JS) → `k8s/frontend.yaml`
 
 O disco Azure ext4 nasce com `lost+found`. O `initdb` do Postgres recusa o mount point. Por isso `PGDATA` aponta para o subdiretório `pgdata`.
 
