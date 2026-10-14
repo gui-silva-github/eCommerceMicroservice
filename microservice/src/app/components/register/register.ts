@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthenticationResponse } from '../../models/authentication-response';
@@ -30,7 +30,7 @@ import {
   templateUrl: './register.html',
   styleUrl: './register.css',
 })
-export class Register {
+export class Register implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly isSubmitting = signal(false);
 
@@ -70,6 +70,14 @@ export class Register {
         this.errorMessage.set(getApiErrorMessage(error, 'Não foi possível concluir o cadastro.'));
       },
     });
+  }
+
+  ngOnInit(): void {
+    // Com Entra External ID o formulário local não é usado: a tela hospedada do Entra
+    // faz a criação de conta (user flow "Inscrição e entrada").
+    if (this.usersService.usesEntra) {
+      this.usersService.loginWithEntra(true);
+    }
   }
 
   get emailFormControl(): FormControl {

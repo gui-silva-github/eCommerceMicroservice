@@ -1,0 +1,18 @@
+<fragment>
+	<!--
+	  Fragment "ecommerce-require-admin"
+	  Usar SEMPRE depois de <include-fragment fragment-id="ecommerce-validate-user" />.
+	  Bloqueia com 403 quem não tem o app role "Admin" (atribuído em Enterprise applications > ecommerce-api > Users and groups).
+	-->
+	<choose>
+		<when condition="@(!(bool)context.Variables["isAdmin"])">
+			<return-response>
+				<set-status code="403" reason="Forbidden" />
+				<set-header name="Content-Type" exists-action="override">
+					<value>application/json</value>
+				</set-header>
+				<set-body>{"message":"Apenas administradores podem executar esta operação."}</set-body>
+			</return-response>
+		</when>
+	</choose>
+</fragment>

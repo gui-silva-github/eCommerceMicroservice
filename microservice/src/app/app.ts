@@ -37,6 +37,13 @@ export class AppComponent {
   });
 
   constructor() {
+    // Entra External ID: trata o retorno do redirect (#code=...) e carrega o perfil via APIM.
+    this.usersService.completeEntraLogin().subscribe((user) => {
+      if (user) {
+        this.router.navigate(user.isAdmin ? ['/admin', 'products'] : ['/products', 'showcase']);
+      }
+    });
+
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
       takeUntilDestroyed(),

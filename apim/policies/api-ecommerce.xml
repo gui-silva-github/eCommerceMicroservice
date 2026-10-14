@@ -1,0 +1,48 @@
+<!--
+  Política no nível da API "ecommerce" (All operations > Inbound processing > </> editor).
+  Vale para todas as operações; as operações protegidas acrescentam os fragments.
+  Named values: gateway-shared-secret (Secret)
+-->
+<policies>
+	<inbound>
+		<!-- 1) CORS (precisa ser a 1ª política do inbound): o Angular chama o APIM de outra origem. Acrescente aqui a origem do AKS (http://<INGRESS_IP>) se servir o frontend por lá. -->
+		<cors allow-credentials="false" terminate-unmatched-request="true">
+			<allowed-origins>
+				<origin>http://localhost:4200</origin>
+			</allowed-origins>
+			<allowed-methods preflight-result-max-age="300">
+				<method>GET</method>
+				<method>POST</method>
+				<method>PUT</method>
+				<method>DELETE</method>
+			</allowed-methods>
+			<allowed-headers>
+				<header>Authorization</header>
+				<header>Content-Type</header>
+			</allowed-headers>
+		</cors>
+		<base />
+		<!-- 2) O Ocelot deixa furar o rate limit com "ClientId: admin-client". Ninguém de fora manda esse header. -->
+		<set-header name="ClientId" exists-action="delete" />
+		<!-- 3) Prova para o Ocelot de que a chamada passou pelo APIM (Apim__SharedSecret no gateway). -->
+		<set-header name="X-Apim-Secret" exists-action="override">
+			<value>{{gateway-shared-secret}}</value>
+		</set-header>
+		<!-- 4) Rate limit por usuário/IP. NÃO existe no tier Consumption; descomente em Developer, Basic v2 ou superior.
+		<rate-limit-by-key calls="60" renewal-period="60"
+			counter-key="@(context.Request.Headers.GetValueOrDefault("Authorization","").AsJwt()?.Claims.GetValueOrDefault("oid", context.Request.IpAddress) ?? context.Request.IpAddress)" />
+		-->
+	</inbound>
+	<backend>
+		<base />
+	</backend>
+	<outbound>
+		<base />
+		<!-- Não expõe detalhes do backend. -->
+		<set-header name="Server" exists-action="delete" />
+		<set-header name="X-Powered-By" exists-action="delete" />
+	</outbound>
+	<on-error>
+		<base />
+	</on-error>
+</policies>

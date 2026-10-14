@@ -6,7 +6,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci --legacy-peer-deps
 
 COPY . .
-# production = Compose (localhost:7010) | azure-prod = gateway no Container Apps
+# production = Compose (localhost:7010) | azure-prod = gateway no Container Apps | entra-prod = APIM + Entra External ID
 ARG BUILD_CONFIGURATION=production
 RUN npm run build -- --configuration=${BUILD_CONFIGURATION}
 

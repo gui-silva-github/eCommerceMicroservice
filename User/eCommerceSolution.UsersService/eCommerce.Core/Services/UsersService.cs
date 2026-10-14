@@ -76,6 +76,34 @@ namespace eCommerce.Core.Services
             return _mapper.Map<UserDTO>(user);
         }
 
+        public async Task<UserDTO> SyncExternalUser(ExternalUserInfo externalUser)
+        {
+            if (externalUser.ObjectId == Guid.Empty)
+            {
+                throw new BusinessException("Token sem a claim 'oid'.");
+            }
+
+            if (string.IsNullOrWhiteSpace(externalUser.Email))
+            {
+                // Sem e-mail não dá para respeitar a UNIQUE de "Email" nem mostrar o usuário no admin.
+                // No Portal: App registration da API > Token configuration > Add optional claim > Access > email.
+                throw new BusinessException("Token sem a claim 'email'. Adicione a optional claim 'email' ao access token da API.");
+            }
+
+            var user = new ApplicationUser
+            {
+                UserID = externalUser.ObjectId,
+                Email = externalUser.Email.Trim().ToLowerInvariant(),
+                PersonName = string.IsNullOrWhiteSpace(externalUser.PersonName) ? externalUser.Email : externalUser.PersonName,
+                Gender = externalUser.Gender,
+                Password = null,
+            };
+
+            ApplicationUser saved = await _usersRepository.UpsertExternalUser(user);
+
+            return _mapper.Map<UserDTO>(saved);
+        }
+
         private static async Task ValidateAsync<T>(IValidator<T> validator, T instance)
         {
             ValidationResult validationResult = await validator.ValidateAsync(instance);

@@ -11,5 +11,10 @@ namespace eCommerce.Core.RepositoryContracts
         Task<ApplicationUser?> GetUserByEmailAndPassword(string? email, string? password);
 
         Task<ApplicationUser?> GetUserByUserID(Guid userID);
+
+        /// <summary>
+        /// INSERT ... ON CONFLICT ("UserID") DO UPDATE. Usuários do Entra não têm senha local (Password = NULL).
+        /// </summary>
+        Task<ApplicationUser> UpsertExternalUser(ApplicationUser user);
     }
 }

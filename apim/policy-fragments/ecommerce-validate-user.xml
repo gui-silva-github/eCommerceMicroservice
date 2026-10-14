@@ -1,0 +1,26 @@
+<fragment>
+	<!--
+	  Fragment "ecommerce-validate-user"
+	  Valida o access token do Microsoft Entra External ID (tenant externo, ciamlogin.com) e
+	  publica duas variáveis para as políticas das operações:
+	    userOid  (string) = claim "oid" = UserID do usuário no Postgres
+	    isAdmin  (bool)   = app role "Admin" presente na claim "roles"
+	  Named values usados (APIM > APIs > Named values): entra-tenant-subdomain, entra-tenant-id, entra-api-client-id
+	-->
+	<validate-jwt header-name="Authorization" require-scheme="Bearer" failed-validation-httpcode="401" failed-validation-error-message="Token ausente ou inválido. Faça login novamente." output-token-variable-name="jwt">
+		<!-- O issuer (https://<tenant-id>.ciamlogin.com/<tenant-id>/v2.0) e as chaves vêm deste metadata. -->
+		<openid-config url="https://{{entra-tenant-subdomain}}.ciamlogin.com/{{entra-tenant-id}}/v2.0/.well-known/openid-configuration" />
+		<!-- Token v2: aud = Application (client) ID da API (requestedAccessTokenVersion = 2 no manifest). -->
+		<audiences>
+			<audience>{{entra-api-client-id}}</audience>
+		</audiences>
+		<required-claims>
+			<!-- Scope delegado exposto em ecommerce-api > Expose an API. -->
+			<claim name="scp" match="any" separator=" ">
+				<value>Ecommerce.Access</value>
+			</claim>
+		</required-claims>
+	</validate-jwt>
+	<set-variable name="userOid" value="@(((Jwt)context.Variables["jwt"]).Claims.GetValueOrDefault("oid", ""))" />
+	<set-variable name="isAdmin" value="@(((Jwt)context.Variables["jwt"]).Claims.GetValueOrDefault("roles", "").Split(',').Contains("Admin"))" />
+</fragment>

@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS public."Users" (
     "Email" varchar(255) NOT NULL,
     "PersonName" varchar(255) NULL,
     "Gender" varchar(50) NULL,
-    "Password" varchar(255) NOT NULL,
+    -- NULL para contas do Microsoft Entra External ID (a senha fica no Entra, não aqui).
+    "Password" varchar(255) NULL,
     CONSTRAINT "PK_Users" PRIMARY KEY ("UserID"),
     CONSTRAINT "UQ_Users_Email" UNIQUE ("Email")
 );

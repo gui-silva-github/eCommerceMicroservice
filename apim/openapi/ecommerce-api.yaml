@@ -1,0 +1,130 @@
+openapi: 3.0.1
+info:
+  title: eCommerce (Harbor)
+  description: >-
+    Fachada do API Management na frente do Ocelot. Os caminhos são os mesmos do Ocelot
+    (o APIM tira o sufixo /ecommerce e repassa /api/... para o backend "ocelot-gateway").
+    Importe em APIM > APIs > + Add API > OpenAPI (docs/roteiro-entra-external-id-apim.md, C3).
+  version: '1.0'
+servers:
+  - url: https://SUBSTITUA-PELO-BACKEND
+paths:
+  /api/products:
+    get:
+      operationId: listProducts
+      summary: Catálogo (público)
+      tags: [public]
+      responses:
+        '200': { description: OK }
+    post:
+      operationId: createProduct
+      summary: Criar produto (Admin)
+      tags: [admin]
+      responses:
+        '200': { description: OK }
+    put:
+      operationId: updateProduct
+      summary: Atualizar produto (Admin)
+      tags: [admin]
+      responses:
+        '200': { description: OK }
+  /api/products/search/product-id/{productId}:
+    get:
+      operationId: getProductById
+      summary: Produto por ID (público)
+      tags: [public]
+      parameters:
+        - { name: productId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+  /api/products/search/{searchString}:
+    get:
+      operationId: searchProducts
+      summary: Busca de produtos (público)
+      tags: [public]
+      parameters:
+        - { name: searchString, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+  /api/products/{productId}:
+    delete:
+      operationId: deleteProduct
+      summary: Excluir produto (Admin)
+      tags: [admin]
+      parameters:
+        - { name: productId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+  /api/Users/me:
+    get:
+      operationId: getCurrentUser
+      summary: Perfil do usuário logado (cria no Postgres no primeiro acesso)
+      tags: [user]
+      responses:
+        '200': { description: OK }
+  /api/Orders:
+    get:
+      operationId: listOrders
+      summary: Todos os pedidos (Admin)
+      tags: [admin]
+      responses:
+        '200': { description: OK }
+    post:
+      operationId: createOrder
+      summary: Criar pedido (o userID do corpo tem de ser o oid do token)
+      tags: [user]
+      responses:
+        '200': { description: OK }
+  /api/Orders/search/orderid/{orderId}:
+    get:
+      operationId: getOrderById
+      summary: Pedido por ID (usuário logado)
+      tags: [user]
+      parameters:
+        - { name: orderId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+  /api/Orders/search/userid/{userId}:
+    get:
+      operationId: getOrdersByUser
+      summary: Pedidos de um usuário (o próprio usuário ou Admin)
+      tags: [user]
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+  /api/Orders/search/productid/{productId}:
+    get:
+      operationId: getOrdersByProduct
+      summary: Pedidos por produto (Admin)
+      tags: [admin]
+      parameters:
+        - { name: productId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+  /api/Orders/search/orderDate/{orderDate}:
+    get:
+      operationId: getOrdersByDate
+      summary: Pedidos por data (Admin)
+      tags: [admin]
+      parameters:
+        - { name: orderDate, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+  /api/Orders/{orderId}:
+    put:
+      operationId: updateOrder
+      summary: Atualizar pedido (Admin)
+      tags: [admin]
+      parameters:
+        - { name: orderId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+    delete:
+      operationId: deleteOrder
+      summary: Excluir pedido (Admin)
+      tags: [admin]
+      parameters:
+        - { name: orderId, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: OK }

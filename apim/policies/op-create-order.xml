@@ -1,0 +1,34 @@
+<!--
+  Operação createOrder (POST /api/Orders)
+  O Angular manda userID no corpo. Sem esta checagem, qualquer usuário logado criaria pedido em nome de outro.
+-->
+<policies>
+	<inbound>
+		<base />
+		<include-fragment fragment-id="ecommerce-validate-user" />
+		<choose>
+			<when condition="@{
+				var body = context.Request.Body?.As<JObject>(preserveContent: true);
+				var userId = (string)body?.GetValue("userID", StringComparison.OrdinalIgnoreCase);
+				return !string.Equals(userId, (string)context.Variables["userOid"], StringComparison.OrdinalIgnoreCase);
+			}">
+				<return-response>
+					<set-status code="403" reason="Forbidden" />
+					<set-header name="Content-Type" exists-action="override">
+						<value>application/json</value>
+					</set-header>
+					<set-body>{"message":"O userID do pedido não corresponde ao usuário logado."}</set-body>
+				</return-response>
+			</when>
+		</choose>
+	</inbound>
+	<backend>
+		<base />
+	</backend>
+	<outbound>
+		<base />
+	</outbound>
+	<on-error>
+		<base />
+	</on-error>
+</policies>

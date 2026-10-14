@@ -24,6 +24,25 @@ spec:
               value: Development
             - name: ConnectionStrings__PostgresConnection
               value: Host=postgres.ecommerce-data.svc.cluster.local;Port=5432;Database=eCommerceUsers;Username=postgres;Password=123
+            # Microsoft Entra External ID (docs/roteiro-entra-external-id-apim.md, D3).
+            - name: EntraExternalId__TenantSubdomain
+              valueFrom:
+                configMapKeyRef:
+                  name: entra-external-id
+                  key: tenant-subdomain
+                  optional: true
+            - name: EntraExternalId__TenantId
+              valueFrom:
+                configMapKeyRef:
+                  name: entra-external-id
+                  key: tenant-id
+                  optional: true
+            - name: EntraExternalId__ApiClientId
+              valueFrom:
+                configMapKeyRef:
+                  name: entra-external-id
+                  key: api-client-id
+                  optional: true
           readinessProbe:
             tcpSocket:
               port: 8080

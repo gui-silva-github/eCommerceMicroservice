@@ -68,7 +68,9 @@ eCommerceMicroservice/
 ├── microservice/                                # Angular 21
 │   ├── src/environment.ts                       # localhost:7010
 │   ├── src/environment.azure.ts                 # gateway ACA
-│   └── src/environment.aks.ts                   # Ingress do AKS
+│   ├── src/environment.aks.ts                   # Ingress do AKS
+│   └── src/environment.entra.ts                 # APIM + Microsoft Entra External ID (MSAL)
+├── apim/                                        # OpenAPI, policy fragments e políticas do API Management
 ├── docker/                                      # init Postgres / MySQL (+ imagens :init)
 ├── docker-compose.yml
 ├── k8s/                                         # Deployments, StatefulSets, Ingress
@@ -76,7 +78,8 @@ eCommerceMicroservice/
 ├── docs/
 │   ├── final-project.png
 │   ├── architecture-microservices.png
-│   └── roteiro-aca-depois-aks.md                # ordem dos comandos ACA → AKS
+│   ├── roteiro-aca-depois-aks.md                # ordem dos comandos ACA → AKS
+│   └── roteiro-entra-external-id-apim.md        # Portal: Entra External ID + APIM
 └── .github/workflows/ci.yml                     # hoje: dotnet build
 ```
 
@@ -210,6 +213,9 @@ SPA em **Angular 21** com **Angular Material**. Todas as URLs apontam para o **g
 | `src/environment.ts` | `npm start` / Compose | `http://localhost:7010` |
 | `src/environment.azure.ts` | `npm run start:azure` | HTTPS do `<ACA_GATEWAY>` |
 | `src/environment.aks.ts` | build `aks-prod` | IP do Ingress (`/api/Auth/`, `/api/products`, `/api/Orders`) |
+| `src/environment.entra.ts` | `npm run start:entra` / build `entra-prod` | APIM (`https://<APIM>.azure-api.net/ecommerce`) com login no Entra External ID |
+
+Login real (Microsoft Entra External ID, sucessor do Azure AD B2C) com o Azure API Management na frente do Ocelot: passo a passo no Portal em [`docs/roteiro-entra-external-id-apim.md`](docs/roteiro-entra-external-id-apim.md).
 
 No `angular.json`, `azure-prod` troca o environment pelo do Container Apps; `aks-prod` troca pelo do AKS. O Dockerfile do frontend recebe `BUILD_CONFIGURATION`.
 
