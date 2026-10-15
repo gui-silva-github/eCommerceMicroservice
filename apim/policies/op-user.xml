@@ -1,0 +1,19 @@
+<!--
+  Operações de usuário logado: getCurrentUser, getOrderById
+  (Design > operação > Inbound processing > </> editor)
+-->
+<policies>
+	<inbound>
+		<base />
+		<include-fragment fragment-id="ecommerce-validate-user" />
+	</inbound>
+	<backend>
+		<base />
+	</backend>
+	<outbound>
+		<base />
+	</outbound>
+	<on-error>
+		<base />
+	</on-error>
+</policies>

@@ -1,0 +1,30 @@
+<!--
+  Operação getOrdersByUser (GET /api/Orders/search/userid/{userId})
+  Cliente só vê os próprios pedidos; Admin vê de qualquer um.
+-->
+<policies>
+	<inbound>
+		<base />
+		<include-fragment fragment-id="ecommerce-validate-user" />
+		<choose>
+			<when condition="@(!(bool)context.Variables["isAdmin"] && !string.Equals(context.Request.MatchedParameters["userId"], (string)context.Variables["userOid"], StringComparison.OrdinalIgnoreCase))">
+				<return-response>
+					<set-status code="403" reason="Forbidden" />
+					<set-header name="Content-Type" exists-action="override">
+						<value>application/json</value>
+					</set-header>
+					<set-body>{"message":"Você só pode consultar os seus próprios pedidos."}</set-body>
+				</return-response>
+			</when>
+		</choose>
+	</inbound>
+	<backend>
+		<base />
+	</backend>
+	<outbound>
+		<base />
+	</outbound>
+	<on-error>
+		<base />
+	</on-error>
+</policies>

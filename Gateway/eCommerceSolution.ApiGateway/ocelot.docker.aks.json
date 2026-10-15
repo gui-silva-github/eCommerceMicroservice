@@ -22,6 +22,21 @@
         }
       },
       {
+        "DownstreamPathTemplate": "/api/Users/me",
+        "DownstreamScheme": "http",
+        "DownstreamHostAndPorts": [
+          { "Host": "users-api", "Port": 80 }
+        ],
+        "UpstreamPathTemplate": "/api/Users/me",
+        "UpstreamHttpMethod": [ "GET" ],
+        "Priority": 2,
+        "QoSOptions": {
+          "ExceptionsAllowedBeforeBreaking": 3,
+          "DurationOfBreak": 5000,
+          "TimeoutValue": 10000
+        }
+      },
+      {
         "DownstreamPathTemplate": "/api/Users/{everything}",
         "DownstreamScheme": "http",
         "DownstreamHostAndPorts": [

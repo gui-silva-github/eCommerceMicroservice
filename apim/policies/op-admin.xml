@@ -1,0 +1,20 @@
+<!--
+  Operações de administração: createProduct, updateProduct, deleteProduct,
+  listOrders, getOrdersByProduct, getOrdersByDate, updateOrder, deleteOrder
+-->
+<policies>
+	<inbound>
+		<base />
+		<include-fragment fragment-id="ecommerce-validate-user" />
+		<include-fragment fragment-id="ecommerce-require-admin" />
+	</inbound>
+	<backend>
+		<base />
+	</backend>
+	<outbound>
+		<base />
+	</outbound>
+	<on-error>
+		<base />
+	</on-error>
+</policies>

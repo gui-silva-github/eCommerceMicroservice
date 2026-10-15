@@ -1,6 +1,8 @@
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Ocelot.Provider.Polly;
+using System.Security.Cryptography;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +45,32 @@ app.MapWhen(
         await context.Response.WriteAsync(
             """{"status":"ok","service":"api-gateway"}""");
     }));
+
+// Com o APIM na frente: só aceita chamadas que tragam o segredo que o APIM injeta
+// (named value "gateway-shared-secret" → header X-Apim-Secret). Assim ninguém pula o APIM
+// chamando o FQDN do ACA / IP do Ingress direto. Sem Apim__SharedSecret (Compose), nada muda.
+var apimSharedSecret = builder.Configuration["Apim:SharedSecret"];
+
+if (!string.IsNullOrWhiteSpace(apimSharedSecret))
+{
+    byte[] expectedSecret = Encoding.UTF8.GetBytes(apimSharedSecret);
+
+    app.Use(async (context, next) =>
+    {
+        string received = context.Request.Headers["X-Apim-Secret"].ToString();
+
+        if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(received), expectedSecret))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new { message = "Acesse a API pelo Azure API Management." });
+            return;
+        }
+
+        // Não repassa o segredo para os microserviços.
+        context.Request.Headers.Remove("X-Apim-Secret");
+        await next();
+    });
+}
 
 await app.UseOcelot();
 

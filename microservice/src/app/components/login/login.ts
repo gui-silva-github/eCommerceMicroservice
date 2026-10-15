@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthenticationResponse } from '../../models/authentication-response';
@@ -33,7 +33,7 @@ import {
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
-export class Login {
+export class Login implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly isSubmitting = signal(false);
 
@@ -81,6 +81,14 @@ export class Login {
         this.errorMessage.set(getApiErrorMessage(error, 'Não foi possível realizar o login.'));
       },
     });
+  }
+
+  ngOnInit(): void {
+    // Com Entra External ID o formulário local não é usado: a tela hospedada do Entra
+    // faz o login (user flow "Inscrição e entrada").
+    if (this.usersService.usesEntra) {
+      this.usersService.loginWithEntra(false);
+    }
   }
 
   get emailFormControl(): FormControl {

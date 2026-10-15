@@ -5,8 +5,10 @@
     "ng": "ng",
     "start": "ng serve",
     "start:azure": "ng serve --configuration=azure --host 0.0.0.0 --port 4200",
+    "start:entra": "ng serve --configuration=entra --host 0.0.0.0 --port 4200",
     "build": "ng build",
     "build:azure": "ng build --configuration=azure-prod",
+    "build:entra": "ng build --configuration=entra-prod",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -25,8 +27,8 @@
   "private": true,
   "packageManager": "npm@10.9.2",
   "dependencies": {
-    "@angular/cdk": "^21.2.14",
     "@angular/animations": "^21.1.0",
+    "@angular/cdk": "^21.2.14",
     "@angular/common": "^21.1.0",
     "@angular/compiler": "^21.1.0",
     "@angular/core": "^21.1.0",
@@ -34,6 +36,8 @@
     "@angular/material": "^21.2.14",
     "@angular/platform-browser": "^21.1.0",
     "@angular/router": "^21.1.0",
+    "@azure/msal-angular": "^5.3.1",
+    "@azure/msal-browser": "^5.25.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

@@ -22,6 +22,18 @@ spec:
           env:
             - name: ASPNETCORE_ENVIRONMENT
               value: Aks
+            # CORS passa a ser do APIM; uma origem inexistente faz o Ocelot não emitir cabeçalhos CORS.
+            # (O frontend do AKS é servido pelo mesmo Ingress, mesma origem, então não precisa de CORS.)
+            - name: Cors__Origins
+              value: https://cors-handled-by-apim.invalid
+            # Segredo que o APIM injeta em X-Apim-Secret (docs/roteiro-entra-external-id-apim.md, D3).
+            # optional: sem o Secret o gateway segue aberto, como antes.
+            - name: Apim__SharedSecret
+              valueFrom:
+                secretKeyRef:
+                  name: apim-gateway
+                  key: shared-secret
+                  optional: true
           readinessProbe:
             httpGet:
               path: /health

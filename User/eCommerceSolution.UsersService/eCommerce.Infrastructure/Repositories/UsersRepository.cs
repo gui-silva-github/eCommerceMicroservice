@@ -63,6 +63,30 @@ namespace eCommerce.Infrastructure.Repositories
                 new { Email = email, Password = password });
         }
 
+        public async Task<ApplicationUser> UpsertExternalUser(ApplicationUser user)
+        {
+            // COALESCE no Gender: se o token não trouxer a claim, mantém o que já estava salvo.
+            const string query = """
+                INSERT INTO public."Users"("UserID", "Email", "PersonName", "Gender", "Password")
+                VALUES(@UserID, @Email, @PersonName, @Gender, NULL)
+                ON CONFLICT ("UserID") DO UPDATE SET
+                    "Email" = EXCLUDED."Email",
+                    "PersonName" = EXCLUDED."PersonName",
+                    "Gender" = COALESCE(EXCLUDED."Gender", public."Users"."Gender")
+                RETURNING *
+                """;
+
+            try
+            {
+                return await _dbContext.DbConnection.QuerySingleAsync<ApplicationUser>(query, user);
+            }
+            catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.UniqueViolation)
+            {
+                // Mesmo e-mail já usado por uma conta local antiga (ex.: seed admin@gmail.com) com outro UserID.
+                throw new ConflictException("Email já cadastrado por uma conta local. Use outro e-mail no Entra ou remova a conta local.");
+            }
+        }
+
         public async Task<ApplicationUser?> GetUserByUserID(Guid userID)
         {
             const string query = """SELECT * FROM public."Users" WHERE "UserID" = @UserID""";
