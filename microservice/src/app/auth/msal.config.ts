@@ -1,4 +1,4 @@
-import { EnvironmentProviders, Provider } from '@angular/core';
+import { EnvironmentProviders, Provider, inject, provideAppInitializer } from '@angular/core';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import {
   MSAL_INSTANCE,
@@ -83,6 +83,9 @@ export function provideEntraExternalId(env: AppEnvironment): Array<Provider | En
   return [
     { provide: MSAL_INSTANCE, useFactory: () => createMsalInstance(entra) },
     { provide: MSAL_INTERCEPTOR_CONFIG, useFactory: () => createInterceptorConfig(env, entra) },
+    // Garante o MSAL inicializado antes de qualquer HTTP: sem isso, um F5 numa página que chama
+    // Orders/Admin ao abrir faz o MsalInterceptor pedir token antes do initialize() terminar.
+    provideAppInitializer(() => inject(MSAL_INSTANCE).initialize()),
     { provide: HTTP_INTERCEPTORS, useClass: MsalInterceptor, multi: true },
     MsalService,
     MsalBroadcastService,
